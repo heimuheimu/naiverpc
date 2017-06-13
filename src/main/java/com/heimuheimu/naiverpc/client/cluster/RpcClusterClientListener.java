@@ -22,33 +22,34 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.constant;
+package com.heimuheimu.naiverpc.client.cluster;
 
 /**
- * RPC 操作代码
+ * RPC 服务调用集群客户端事件监听器
  *
  * @author heimuheimu
- * @see {@link com.heimuheimu.naiverpc.packet.RpcPacket}
  */
-public class OperationCode {
-
-    private OperationCode() {
-        //prevent create instance
-    }
+public interface RpcClusterClientListener {
 
     /**
-     * 远程服务调用
+     * 当 RPC 服务调用客户端在 RPC 服务调用集群客户端初始化过程被创建成功时，将会触发此事件
+     *
+     * @param host 创建成功的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
-    public static final byte REMOTE_PROCEDURE_CALL = 0;
+    void onCreated(String host);
 
     /**
-     * 心跳检测
+     * 当 RPC 服务调用客户端恢复时，将会触发此事件
+     *
+     * @param host 已恢复的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
-    public static final byte HEARTBEAT = 1;
+    void onRecovered(String host);
 
     /**
-     * 下线
+     * 当 RPC 服务调用客户端关闭时，将会触发此事件
+     *
+     * @param host 已关闭的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
-    public static final byte OFFLINE = 2;
+    void onClosed(String host);
 
 }

@@ -41,7 +41,7 @@ public class RpcPacketBuilder {
     /**
      * 构造一个 body 长度为 0 的 RPC 请求数据包并返回
      *
-     * @param packetId 请求数据包 I，在一个通信管道内唯一
+     * @param packetId 请求数据包 ID，在一个通信管道内唯一
      * @param opcode 数据包所对应的操作代码
      * @return 请求数据包，body 长度为 0
      */

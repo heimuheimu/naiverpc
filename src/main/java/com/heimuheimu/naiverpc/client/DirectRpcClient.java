@@ -102,14 +102,24 @@ public class DirectRpcClient implements RpcClient {
     private final RpcClientListenerWrapper rpcClientListenerWrapper;
 
     /**
+     * 连续 {@link TimeoutException} 异常出现次数
+     */
+    private volatile long continuousTimeoutExceptionTimes = 0;
+
+    /**
+     * 最后一次出现 {@link TimeoutException} 异常的时间戳
+     */
+    private volatile long lastTimeoutExceptionTime = 0;
+
+    /**
      * 构造一个 RPC 服务调用直连客户端
-     * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB</p>
+     * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒</p>
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws RuntimeException 如果创建 {@link RpcChannel} 过程中发生错误，将会抛出此异常
      */
     public DirectRpcClient(String host) throws RuntimeException {
-        this(host, null, 5000, 64 * 1024, null);
+        this(host, null, 5000, 64 * 1024, 30, null);
     }
 
     /**
@@ -119,13 +129,15 @@ public class DirectRpcClient implements RpcClient {
      * @param configuration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
      * @param timeout RPC 服务调用超时时间，单位：毫秒，不能小于等于0
      * @param compressionThreshold 最小压缩字节数，当 数据包 body 字节数小于或等于该值，不进行压缩，不能小于等于0
+     * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内当前管道如果没有任何数据交互，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
      * @param clientListener RPC 服务调用客户端监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 timeout 小于等于0
      * @throws IllegalArgumentException 如果 compressionThreshold 小于等于0
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws RuntimeException 如果创建 {@link RpcChannel} 过程中发生错误，将会抛出此异常
      */
-    public DirectRpcClient(String host, SocketConfiguration configuration, int timeout, int compressionThreshold, RpcClientListener clientListener)
+    public DirectRpcClient(String host, SocketConfiguration configuration, int timeout, int compressionThreshold,
+                           int heartbeatPeriod, RpcClientListener clientListener)
         throws RuntimeException {
         if (timeout <= 0) {
             LOG.error("Create DirectRpcClient failed. Timeout could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
@@ -146,7 +158,7 @@ public class DirectRpcClient implements RpcClient {
         this.host = host;
         this.timeout = timeout;
         this.transcoder = new SimpleTranscoder(compressionThreshold);
-        this.rpcChannel = new RpcChannel(host, configuration, new RpcChannelListenerSkeleton() {
+        this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, new RpcChannelListenerSkeleton() {
 
             @Override
             public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
@@ -157,6 +169,15 @@ public class DirectRpcClient implements RpcClient {
                         resultMap.put(packetId, packet);
                         latch.countDown();
                     }
+                } else {
+                    LOG.error("Unrecognized rpc packet: `{}`", packet);
+                }
+            }
+
+            @Override
+            public void onClosed(RpcChannel channel) {
+                for (CountDownLatch latch : latchMap.values()) {
+                    latch.countDown();
                 }
             }
 
@@ -262,12 +283,25 @@ public class DirectRpcClient implements RpcClient {
                 } else {
                     LOG.error("Empty response packet. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                     rpcClientListenerWrapper.onError(this, method, args);
-                    throw new RpcException("Empty response packet. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                    throw new RpcException("Empty response packet. Maybe DirectRpcClient has been closed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                 }
             } else {
                 latchMap.remove(packetId);
                 LOG.error("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
                         + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                //如果两次超时异常发生在 1s 以内，则认为是连续失败
+                if (System.currentTimeMillis() - lastTimeoutExceptionTime < 1000) {
+                    continuousTimeoutExceptionTimes ++;
+                } else {
+                    continuousTimeoutExceptionTimes = 1;
+                }
+                lastTimeoutExceptionTime = System.currentTimeMillis();
+                //如果连续超时异常出现次数大于 50 次，认为当前连接出现异常，关闭当前连接
+                if (continuousTimeoutExceptionTimes > 50) {
+                    LOG.error("DirectRpcClient need to be closed due to: `Too many timeout exceptions[{}]`. Host: `{}`.",
+                            continuousTimeoutExceptionTimes, host);
+                    close();
+                }
                 rpcClientListenerWrapper.onTimeout(this, method, args);
                 throw new TimeoutException("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
                         + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");

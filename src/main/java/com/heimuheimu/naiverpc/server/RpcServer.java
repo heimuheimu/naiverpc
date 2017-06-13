@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -49,6 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author heimuheimu
  * @ThreadSafe
  */
+@SuppressWarnings("unused")
 public class RpcServer implements Closeable {
 
     private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");
@@ -120,6 +122,30 @@ public class RpcServer implements Closeable {
     }
 
     /**
+     * 执行下线操作，当前 RPC 服务提供者不再接受新的 RPC 客户端连接请求，并给已建立的客户端发送离线消息，
+     * 收到离线消息的客户端将不再发送新的消息请求，并在 1 分钟后关闭。
+     * <p>该方法通常在应用关闭前调用，正在执行中的请求不会因为 RPC 客户端突然关闭导致失败</p>
+     */
+    public synchronized void offline() {
+        long startTime = System.currentTimeMillis();
+        if (state == BeanStatusEnum.NORMAL) {
+            if (rpcServerTask != null) {
+                try {
+                    rpcServerTask.close();
+                    ArrayList<RpcChannel> copyActiveChannelList = new ArrayList<>(activeRpcChannelList);
+                    for (RpcChannel channel : copyActiveChannelList) {
+                        channel.offline();
+                    }
+                    RPC_CONNECTION_LOG.info("RpcServer has been offline. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
+                            (System.currentTimeMillis() - startTime), port, socketConfiguration);
+                } catch (Exception e) {
+                    LOG.error("Offline RpcServer failed. Unexpected error. Port: `" + port + "`.", e);
+                }
+            }
+        }
+    }
+
+    /**
      * 执行 RPC 服务提供者初始化操作，仅在初始化完成后，才能提供服务
      */
     public synchronized void init() {
@@ -175,7 +201,7 @@ public class RpcServer implements Closeable {
                 try {
                     Socket socket = serverSocket.accept();
                     SocketBuilder.setConfig(socket, socketConfiguration);
-                    RpcChannel rpcChannel = new RpcChannel(socket, rpcChannelListener);
+                    RpcChannel rpcChannel = new RpcChannel(socket, -1, rpcChannelListener);
                     rpcChannel.init();
                     activeRpcChannelList.add(rpcChannel);
                 } catch (SocketException e) {
