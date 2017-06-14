@@ -34,7 +34,6 @@ import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Random;
@@ -48,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * @author heimuheimu
  * @ThreadSafe
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class RpcClusterClient implements RpcClient {
 
     private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");
@@ -132,16 +132,27 @@ public class RpcClusterClient implements RpcClient {
 
     /**
      * 构造一个 RPC 服务调用集群客户端
+     * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒</p>
+     *
+     * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     *              @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
+     * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
+     */
+    public RpcClusterClient(String[] hosts) {
+        this(hosts, null, 5000, 64 * 1024, 30, null, null);
+    }
+
+    /**
+     * 构造一个 RPC 服务调用集群客户端
      *
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param configuration 创建 RPC 服务调用客户端所使用的 Socket 配置信息
      * @param timeout RPC 服务调用默认超时时间，单位：毫秒
      * @param compressionThreshold 最小压缩字节数，当 Value 字节数小于或等于该值，不进行压缩，不能小于等于0
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内单个 RPC 服务调用客户端使用的数据管道如果没有任何数据交互，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
-     * @param rpcClientListener RPC 服务调用客户端监听器
-     * @param rpcClusterClientListener RPC 服务调用集群客户端事件监听器
+     * @param rpcClientListener RPC 服务调用客户端监听器，允许为 {@code null}
+     * @param rpcClusterClientListener RPC 服务调用集群客户端事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
-     * @throws IllegalStateException 如果在创建过程中所有 RPC 服务调用客户端都不可用
      */
     public RpcClusterClient(String[] hosts, SocketConfiguration configuration, int timeout, int compressionThreshold,
                             int heartbeatPeriod, RpcClientListener rpcClientListener, RpcClusterClientListener rpcClusterClientListener) {
@@ -273,8 +284,8 @@ public class RpcClusterClient implements RpcClient {
                 }
                 client = null;
             } else if (isSkipThisRound(clientIndex)) {
-                client = null;
                 LOG.debug("RpcClient is skip this round: `{}`. Client index: `{}`. Hosts: `{}`.", client.getHost(), clientIndex, Arrays.toString(hosts));
+                client = null;
             }
         }
         //如果该 RPC 服务调用客户端暂时不可用，则从可用池里面随机挑选
