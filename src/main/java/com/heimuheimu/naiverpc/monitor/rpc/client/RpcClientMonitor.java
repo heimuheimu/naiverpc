@@ -81,6 +81,15 @@ public class RpcClientMonitor {
     }
 
     /**
+     * 获得全局 RPC 服务调用客户端统计信息
+     *
+     * @return 全局 RPC 服务调用客户端统计信息
+     */
+    public static RpcClientInfo getGlobalInfo() {
+        return GLOBAL_INFO;
+    }
+
+    /**
      * 获得 RPC 服务调用客户端统计信息 Map，Key 为提供 RPC 服务的主机地址，Value 为该地址对应的 RPC 服务调用客户端统计信息
      * <p>注意：全局 RPC 服务调用客户端统计信息的 Key 为空字符串</p>
      *
