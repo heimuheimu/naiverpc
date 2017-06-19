@@ -24,6 +24,7 @@
 
 package com.heimuheimu.naiverpc.packet;
 
+import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
 import com.heimuheimu.naiverpc.util.ByteUtil;
 
 import java.io.IOException;
@@ -54,6 +55,7 @@ public class RpcPacketReader {
         byte[] body = null;
         while (headerPos < 24) {
             int readBytes = inputStream.read(header, headerPos, 24 - headerPos);
+            SocketMonitor.addRead(host, readBytes);
             if (readBytes >= 0) {
                 headerPos += readBytes;
             } else {
@@ -72,6 +74,7 @@ public class RpcPacketReader {
             int bodyPos = 0;
             while (bodyPos < bodyLength) {
                 int readBytes = inputStream.read(body, bodyPos, bodyLength - bodyPos);
+                SocketMonitor.addRead(host, readBytes);
                 if (readBytes >= 0) {
                     bodyPos += readBytes;
                 } else {

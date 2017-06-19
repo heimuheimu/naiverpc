@@ -27,6 +27,7 @@ package com.heimuheimu.naiverpc.channel;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
+import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
@@ -283,6 +284,7 @@ public class RpcChannel implements Closeable {
                                 System.arraycopy(rpcPacket.getHeader(), 0, rpcPacketByteArray, 0, rpcPacket.getHeader().length);
                                 System.arraycopy(rpcPacket.getBody(), 0, rpcPacketByteArray, rpcPacket.getHeader().length, rpcPacket.getBody().length);
                                 outputStream.write(rpcPacketByteArray);
+                                SocketMonitor.addWrite(host, rpcPacketByteArray.length);
                             } else {
                                 addToMergedPacket(rpcPacket);
                             }
@@ -325,6 +327,7 @@ public class RpcChannel implements Closeable {
                 destPos += body.length;
             }
             outputStream.write(mergedPacket, 0,  destPos);
+            SocketMonitor.addWrite(host, destPos);
             resetMergedPacket();
         }
 

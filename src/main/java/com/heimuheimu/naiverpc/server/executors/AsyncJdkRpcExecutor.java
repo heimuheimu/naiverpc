@@ -27,8 +27,10 @@ package com.heimuheimu.naiverpc.server.executors;
 import com.heimuheimu.naiverpc.channel.RpcChannel;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
+import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 import com.heimuheimu.naiverpc.packet.RpcPacketBuilder;
+import com.heimuheimu.naiverpc.server.RpcExecuteListener;
 import com.heimuheimu.naiverpc.server.RpcExecutor;
 import com.heimuheimu.naiverpc.transcoder.SimpleTranscoder;
 import com.heimuheimu.naiverpc.transcoder.Transcoder;
@@ -55,15 +57,18 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
 
     private final Transcoder transcoder;
 
+    private final RpcExecuteListener rpcExecuteListener;
+
     private final ConcurrentHashMap<String, RpcServiceDepiction> depictionMap = new ConcurrentHashMap<>();
 
-    public AsyncJdkRpcExecutor(int maximumPoolSize, int compressionThreshold) {
+    public AsyncJdkRpcExecutor(int maximumPoolSize, int compressionThreshold, RpcExecuteListener rpcExecuteListener) {
         this.maximumPoolSize = maximumPoolSize;
         executorService = new ThreadPoolExecutor(0, maximumPoolSize,
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 new NamedThreadFactory());
         transcoder = new SimpleTranscoder(compressionThreshold);
+        this.rpcExecuteListener = rpcExecuteListener;
     }
 
     @Override
@@ -116,32 +121,80 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
                 channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.INTERNAL_ERROR));
             }
             if (rpcRequestMessage != null) {
+                long startTime = System.nanoTime();
                 try {
                     RpcServiceDepiction depiction = depictionMap.get(rpcRequestMessage.getTargetClass());
                     if (depiction != null) {
                         try {
                             Object v = depiction.execute(rpcRequestMessage.getMethodUniqueName(), rpcRequestMessage.getArguments());
                             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.SUCCESS, v, transcoder));
+                            RpcExecuteMonitor.addSuccess(startTime);
                         } catch (NoSuchMethodException e) {
                             LOG.error("No such method. `{}`.", rpcRequestMessage);
                             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.NO_SUCH_METHOD));
+                            if (rpcExecuteListener != null) {
+                                try {
+                                    rpcExecuteListener.onNoSuchMethod(rpcRequestMessage);
+                                } catch (Exception e1) {
+                                    LOG.error("Call RpcExecuteListener#onNoSuchMethod() failed. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                                }
+                            }
+                            RpcExecuteMonitor.addError(startTime);
                         } catch (IllegalAccessException e) { //should not happen
                             LOG.error("Illegal access. `{}`.", rpcRequestMessage);
                             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.INTERNAL_ERROR));
+                            RpcExecuteMonitor.addError(startTime);
                         } catch (IllegalArgumentException e) {
                             LOG.error("Illegal argument. `{}`.", rpcRequestMessage);
                             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.ILLEGAL_ARGUMENT));
+                            if (rpcExecuteListener != null) {
+                                try {
+                                    rpcExecuteListener.onIllegalArgument(rpcRequestMessage);
+                                } catch (Exception e1) {
+                                    LOG.error("Call RpcExecuteListener#onIllegalArgument() failed. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                                }
+                            }
+                            RpcExecuteMonitor.addError(startTime);
                         } catch (InvocationTargetException e) {
                             LOG.error("Invocation target error. `" + rpcRequestMessage + "`.", e);
                             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.INVOCATION_TARGET_ERROR, e.getCause().getMessage(), transcoder));
+                            if (rpcExecuteListener != null) {
+                                try {
+                                    rpcExecuteListener.onInvocationTargetError(rpcRequestMessage, e);
+                                } catch (Exception e1) {
+                                    LOG.error("Call RpcExecuteListener#onInvocationTargetError() failed. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                                }
+                            }
+                            RpcExecuteMonitor.addError(startTime);
                         }
                     } else {
                         LOG.error("Class not found. `{}`", rpcRequestMessage);
                         channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.CLASS_NOT_FOUND));
+                        if (rpcExecuteListener != null) {
+                            try {
+                                rpcExecuteListener.onClassNotFound(rpcRequestMessage);
+                            } catch (Exception e) {
+                                LOG.error("Call RpcExecuteListener#onClassNotFound() failed. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                            }
+                        }
+                        RpcExecuteMonitor.addError(startTime);
                     }
                 } catch (Exception e) {
                     LOG.error("Unexpected error. `" + rpcRequestMessage + "`.", e);
                     channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.INTERNAL_ERROR));
+                    RpcExecuteMonitor.addError(startTime);
+                } finally {
+                    if (rpcExecuteListener != null) {
+                        long executedNanoTime = System.nanoTime() - startTime;
+                        if (executedNanoTime > RpcExecuteListener.SLOW_EXECUTION_THRESHOLD) {
+                            try {
+                                rpcExecuteListener.onSlowExecution(rpcRequestMessage, executedNanoTime);
+                            } catch (Exception e) {
+                                LOG.error("Call RpcExecuteListener#onSlowExecution() failed. RpcRequestMessage: `" + rpcRequestMessage
+                                        + "`. Executed nano time: `" + executedNanoTime + "`.");
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -24,6 +24,7 @@
 
 package com.heimuheimu.naiverpc.transcoder;
 
+import com.heimuheimu.naiverpc.monitor.compress.CompressionMonitor;
 import com.heimuheimu.naiverpc.transcoder.compression.CompressionService;
 import com.heimuheimu.naiverpc.transcoder.compression.CompressionType;
 import com.heimuheimu.naiverpc.transcoder.compression.LZFCompressionService;
@@ -65,9 +66,13 @@ public class SimpleTranscoder implements Transcoder {
         //使用 Java 自带的序列化方式
         flags[0] = SerializationType.JAVA;
         byte[] valueBytes = javaSerializationService.encode(value);
+        CompressionMonitor.addSize(valueBytes.length);
         if (valueBytes.length > compressionThreshold) {
+            int preCompressedLength = valueBytes.length;
+            long startTime = System.nanoTime();
             //使用 LZF 压缩算法
             valueBytes = lzfCompressionService.compress(valueBytes);
+            CompressionMonitor.addCompress(preCompressedLength, valueBytes.length, startTime);
             flags[1] = CompressionType.LZF;
         } else {
             flags[1] = CompressionType.NONE;
@@ -84,7 +89,10 @@ public class SimpleTranscoder implements Transcoder {
             case CompressionType.NONE:
                 break;
             case CompressionType.LZF:
+                int preDecompressedLength = encodedValue.length;
+                long startTime = System.nanoTime();
                 encodedValue = lzfCompressionService.decompress(encodedValue);
+                CompressionMonitor.addDecompress(preDecompressedLength, encodedValue.length, startTime);
                 break;
             default:
                 throw new UnsupportedOperationException("Invalid compression type: `" + compressionType + "`.");

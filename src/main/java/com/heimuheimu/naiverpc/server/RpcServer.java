@@ -93,7 +93,7 @@ public class RpcServer implements Closeable {
      * 构造一个 RPC 服务提供者，监听端口为 4182，用于执行 RPC 服务调用请求的线程池最大数量为 200， 最小压缩字节数为 64 KB
      */
     public RpcServer() {
-        this(4182, null, 200, 64 * 1024);
+        this(4182, null, 200, 64 * 1024, null);
     }
 
     /**
@@ -103,11 +103,13 @@ public class RpcServer implements Closeable {
      * @param socketConfiguration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
      * @param maximumPoolSize 用于执行 RPC 服务调用请求的线程池最大数量
      * @param compressionThreshold 最小压缩字节数，当 数据包 body 字节数小于或等于该值，不进行压缩，不能小于等于0
+     * @param rpcExecuteListener RPC 服务执行监听器
      */
-    public RpcServer(int port, SocketConfiguration socketConfiguration, int maximumPoolSize, int compressionThreshold) {
+    public RpcServer(int port, SocketConfiguration socketConfiguration, int maximumPoolSize, int compressionThreshold,
+                     RpcExecuteListener rpcExecuteListener) {
         this.port = port;
         this.socketConfiguration = socketConfiguration;
-        this.rpcExecutor = new AsyncJdkRpcExecutor(maximumPoolSize, compressionThreshold);
+        this.rpcExecutor = new AsyncJdkRpcExecutor(maximumPoolSize, compressionThreshold, rpcExecuteListener);
     }
 
     /**

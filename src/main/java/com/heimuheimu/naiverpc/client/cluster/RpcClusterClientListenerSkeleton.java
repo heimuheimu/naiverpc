@@ -22,25 +22,29 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.channel;
-
-import com.heimuheimu.naiverpc.packet.RpcPacket;
+package com.heimuheimu.naiverpc.client.cluster;
 
 /**
- * RPC 数据包交互管道事件监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
- * 可防止 {@link RpcChannelListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * RPC 服务调用集群客户端事件监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
+ * 可防止 {@link RpcClusterClientListener} 在后续版本增加方法时，需重新调整监听器实现类。
  *
  * @author heimuheimu
  */
-public abstract class RpcChannelListenerSkeleton implements RpcChannelListener {
+@SuppressWarnings("unused")
+public abstract class RpcClusterClientListenerSkeleton implements RpcClusterClientListener {
 
     @Override
-    public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
+    public void onCreated(String host) {
         //do nothing
     }
 
     @Override
-    public void onClosed(RpcChannel channel) {
+    public void onRecovered(String host) {
+        //do nothing
+    }
+
+    @Override
+    public void onClosed(String host) {
         //do nothing
     }
 

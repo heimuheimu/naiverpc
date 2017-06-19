@@ -22,26 +22,43 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.channel;
+package com.heimuheimu.naiverpc.server;
 
-import com.heimuheimu.naiverpc.packet.RpcPacket;
+import com.heimuheimu.naiverpc.client.cluster.RpcClusterClientListener;
+import com.heimuheimu.naiverpc.message.RpcRequestMessage;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
- * RPC 数据包交互管道事件监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
- * 可防止 {@link RpcChannelListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * RPC 服务执行监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
+ * 可防止 {@link RpcExecuteListener} 在后续版本增加方法时，需重新调整监听器实现类。
  *
  * @author heimuheimu
  */
-public abstract class RpcChannelListenerSkeleton implements RpcChannelListener {
+public abstract class RpcExecuteListenerSkeleton implements RpcExecuteListener {
 
     @Override
-    public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
+    public void onClassNotFound(RpcRequestMessage rpcRequestMessage) {
         //do nothing
     }
 
     @Override
-    public void onClosed(RpcChannel channel) {
+    public void onNoSuchMethod(RpcRequestMessage rpcRequestMessage) {
         //do nothing
     }
 
+    @Override
+    public void onIllegalArgument(RpcRequestMessage rpcRequestMessage) {
+        //do nothing
+    }
+
+    @Override
+    public void onInvocationTargetError(RpcRequestMessage rpcRequestMessage, InvocationTargetException exception) {
+        //do nothing
+    }
+
+    @Override
+    public void onSlowExecution(RpcRequestMessage rpcRequestMessage, long executedNanoTime) {
+        //do nothing
+    }
 }

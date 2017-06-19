@@ -29,6 +29,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * RPC 服务调用客户端监听器
+ * <p>
+ *     <b>注意：</b>当需要实现 RPC 服务调用客户端监听器时，应优先考虑继承 {@link RpcClientListenerSkeleton} 抽象类进行实现，
+ *     防止 {@link RpcClientListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * </p>
  *
  * @author heimuheimu
  */

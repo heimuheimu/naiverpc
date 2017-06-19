@@ -26,6 +26,10 @@ package com.heimuheimu.naiverpc.client.cluster;
 
 /**
  * RPC 服务调用集群客户端事件监听器
+ * <p>
+ *     <b>注意：</b>当需要实现 RPC 服务调用集群客户端事件监听器时，应优先考虑继承 {@link RpcClusterClientListenerSkeleton} 抽象类进行实现，
+ *     防止 {@link RpcClusterClientListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * </p>
  *
  * @author heimuheimu
  */

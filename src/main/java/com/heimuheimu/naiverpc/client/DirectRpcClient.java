@@ -30,6 +30,7 @@ import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
+import com.heimuheimu.naiverpc.monitor.rpc.client.RpcClientMonitor;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
@@ -198,9 +199,10 @@ public class DirectRpcClient implements RpcClient {
             if (timeout <= 0) {
                 LOG.error("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 rpcClientListenerWrapper.onError(this, method, args);
+                RpcClientMonitor.addError(host, startTime);
                 throw new RpcException("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
             }
-            validateArguments(method, args);
+            validateArguments(startTime, method, args);
             RpcRequestMessage rpcRequestMessage = new RpcRequestMessage();
             rpcRequestMessage.setTargetClass(method.getDeclaringClass().getName());
             rpcRequestMessage.setMethodUniqueName(ReflectUtil.getMethodUniqueName(method));
@@ -208,6 +210,7 @@ public class DirectRpcClient implements RpcClient {
             if (!rpcChannel.isActive()) {
                 LOG.error("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                 rpcClientListenerWrapper.onClosed(this, method, args);
+                RpcClientMonitor.addError(host, startTime);
                 throw new IllegalStateException("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
             }
 
@@ -218,6 +221,7 @@ public class DirectRpcClient implements RpcClient {
             } catch (Exception e) {
                 LOG.error("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                 rpcClientListenerWrapper.onError(this, method, args);
+                RpcClientMonitor.addError(host, startTime);
                 throw new RpcException("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
             }
             CountDownLatch latch = new CountDownLatch(1);
@@ -235,10 +239,13 @@ public class DirectRpcClient implements RpcClient {
                     byte status = responsePacket.getResponseStatus();
                     if (status == ResponseStatusCode.SUCCESS) {
                         try {
-                            return transcoder.decode(responsePacket.getBody(), responsePacket.getSerializationType(), responsePacket.getCompressionType());
+                            Object v = transcoder.decode(responsePacket.getBody(), responsePacket.getSerializationType(), responsePacket.getCompressionType());
+                            RpcClientMonitor.addSuccess(host, startTime);
+                            return v;
                         } catch (Exception e) {
                             LOG.error("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                             rpcClientListenerWrapper.onError(this, method, args);
+                            RpcClientMonitor.addError(host, startTime);
                             throw new RpcException("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                         }
                     } else {
@@ -278,11 +285,13 @@ public class DirectRpcClient implements RpcClient {
                                 rpcClientListenerWrapper.onError(this, method, args);
                         }
                         LOG.error("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
+                        RpcClientMonitor.addError(host, startTime);
                         throw new RpcException("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
                     }
                 } else {
                     LOG.error("Empty response packet. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                     rpcClientListenerWrapper.onError(this, method, args);
+                    RpcClientMonitor.addError(host, startTime);
                     throw new RpcException("Empty response packet. Maybe DirectRpcClient has been closed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                 }
             } else {
@@ -303,6 +312,7 @@ public class DirectRpcClient implements RpcClient {
                     close();
                 }
                 rpcClientListenerWrapper.onTimeout(this, method, args);
+                RpcClientMonitor.addTimeout(host, startTime);
                 throw new TimeoutException("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
                         + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
             }
@@ -314,17 +324,20 @@ public class DirectRpcClient implements RpcClient {
         }
     }
 
-    private void validateArguments(Method method, Object[] args) throws RpcException {
+    @SuppressWarnings("unchecked")
+    private void validateArguments(long startTime, Method method, Object[] args) throws RpcException {
         if (method == null) {
-            LOG.error("Method could not be null. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
-            rpcClientListenerWrapper.onError(this, method, args);
-            throw new RpcException("Method could not be null. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+            LOG.error("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
+            rpcClientListenerWrapper.onError(this, null, args);
+            RpcClientMonitor.addError(host, startTime);
+            throw new RpcException("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
         }
         Class<?>[] parameterTypes = method.getParameterTypes();
         int argsLength = args != null ? args.length : 0;
         if (parameterTypes.length != argsLength) {
             LOG.error("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
             rpcClientListenerWrapper.onError(this, method, args);
+            RpcClientMonitor.addError(host, startTime);
             throw new RpcException("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
         }
         if (args != null && args.length > 0) {
@@ -343,6 +356,7 @@ public class DirectRpcClient implements RpcClient {
                     } else {
                         LOG.error("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                         rpcClientListenerWrapper.onError(this, method, args);
+                        RpcClientMonitor.addError(host, startTime);
                         throw new RpcException("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                     }
                 }
