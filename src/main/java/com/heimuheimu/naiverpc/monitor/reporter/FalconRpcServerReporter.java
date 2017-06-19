@@ -25,18 +25,18 @@
 package com.heimuheimu.naiverpc.monitor.reporter;
 
 import com.heimuheimu.naiverpc.monitor.ExecutionTimeInfo;
-import com.heimuheimu.naiverpc.monitor.rpc.client.RpcClientMonitor;
+import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 基于 Falcon 系统的 RPC 服务调用客户端监控数据上报
+ * 基于 Falcon 系统的 RPC 服务提供者监控数据上报
  *
  * @author heimuheimu
  */
 @SuppressWarnings("unused")
-public class FalconClientReporter extends AbstractFalconReporter {
+public class FalconRpcServerReporter extends AbstractFalconReporter {
 
     private volatile long lastTpsCount = 0;
 
@@ -44,66 +44,54 @@ public class FalconClientReporter extends AbstractFalconReporter {
 
     private volatile long lastTotalExecutionTime = 0;
 
-    private volatile long lastTimeoutCount = 0;
-
     private volatile long lastErrorCount = 0;
 
-    public FalconClientReporter(String pushUrl) {
+    public FalconRpcServerReporter(String pushUrl) {
         super(pushUrl);
     }
 
     @Override
     protected List<FalconData> getPushDataList() {
         List<FalconData> dataList = new ArrayList<>();
-        dataList.add(getClientTps());
-        dataList.add(getClientPeakTps());
-        dataList.add(getClientAverageExecutionTime());
-        dataList.add(getClientTimeoutCount());
-        dataList.add(getClientErrorCount());
+        dataList.add(getServerTps());
+        dataList.add(getServerPeakTps());
+        dataList.add(getServerAverageExecutionTime());
+        dataList.add(getServerErrorCount());
         return dataList;
     }
 
-    private FalconData getClientTps() {
-        long tpsCount = RpcClientMonitor.getGlobalInfo().getTpsInfo().getCount();
+    private FalconData getServerTps() {
+        long tpsCount = RpcExecuteMonitor.get().getTpsInfo().getCount();
         FalconData tpsData = create();
-        tpsData.metric = "naiverpc_client_tps";
+        tpsData.metric = "naiverpc_server_tps";
         tpsData.value = (tpsCount - lastTpsCount) / REPORT_INTERVAL_SECONDS;
         lastTpsCount = tpsCount;
         return tpsData;
     }
 
-    private FalconData getClientPeakTps() {
+    private FalconData getServerPeakTps() {
         FalconData peakTpsData = create();
-        peakTpsData.metric = "naiverpc_client_peak_tps";
-        peakTpsData.value = RpcClientMonitor.getGlobalInfo().getTpsInfo().getPeakTps();
+        peakTpsData.metric = "naiverpc_server_peak_tps";
+        peakTpsData.value = RpcExecuteMonitor.get().getTpsInfo().getPeakTps();
         return peakTpsData;
     }
 
-    private FalconData getClientAverageExecutionTime() {
-        ExecutionTimeInfo executionTimeInfo = RpcClientMonitor.getGlobalInfo().getExecutionTimeInfo();
+    private FalconData getServerAverageExecutionTime() {
+        ExecutionTimeInfo executionTimeInfo = RpcExecuteMonitor.get().getExecutionTimeInfo();
         long executionCount = executionTimeInfo.getCount();
         long totalExecutionTime = executionTimeInfo.getTotalExecutionTime();
         FalconData avgExecTimeData = create();
-        avgExecTimeData.metric = "naiverpc_client_avg_exec_time";
+        avgExecTimeData.metric = "naiverpc_server_avg_exec_time";
         avgExecTimeData.value = (totalExecutionTime - lastTotalExecutionTime) / (executionCount - lastExecutionCount);
         lastExecutionCount = executionCount;
         lastTotalExecutionTime = totalExecutionTime;
         return avgExecTimeData;
     }
 
-    private FalconData getClientTimeoutCount() {
-        FalconData timeoutCountData = create();
-        timeoutCountData.metric = "naiverpc_client_timeout";
-        long timeoutCount = RpcClientMonitor.getGlobalInfo().getTimeout();
-        timeoutCountData.value = timeoutCount - lastTimeoutCount;
-        lastTimeoutCount = timeoutCount;
-        return timeoutCountData;
-    }
-
-    private FalconData getClientErrorCount() {
+    private FalconData getServerErrorCount() {
         FalconData errorCountData = create();
-        errorCountData.metric = "naiverpc_client_error";
-        long errorCount = RpcClientMonitor.getGlobalInfo().getError();
+        errorCountData.metric = "naiverpc_server_error";
+        long errorCount = RpcExecuteMonitor.get().getError();
         errorCountData.value = errorCount - lastErrorCount;
         lastErrorCount = errorCount;
         return errorCountData;
