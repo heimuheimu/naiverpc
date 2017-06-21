@@ -83,6 +83,7 @@ public class AutoRpcProxyBeanRegister implements BeanDefinitionRegistryPostProce
                         .setScope(BeanDefinition.SCOPE_SINGLETON)
                         .getBeanDefinition();
                 registry.registerBeanDefinition(clz.getSimpleName(), beanDefinition);
+                LOG.info("`{}` proxy has been registered.", clz.getName());
             }
         } else {
             LOG.warn("There is no rpc proxy has been registered.");
