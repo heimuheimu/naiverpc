@@ -153,6 +153,7 @@ public class RpcClusterClient implements RpcClient {
      * @param rpcClientListener RPC 服务调用客户端监听器，允许为 {@code null}
      * @param rpcClusterClientListener RPC 服务调用集群客户端事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
+     * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
      */
     public RpcClusterClient(String[] hosts, SocketConfiguration configuration, int timeout, int compressionThreshold,
                             int heartbeatPeriod, RpcClientListener rpcClientListener, RpcClusterClientListener rpcClusterClientListener) {
@@ -190,6 +191,9 @@ public class RpcClusterClient implements RpcClient {
                     }
                 }
             }
+        }
+        if (aliveClientList.isEmpty()) {
+            throw new IllegalStateException("There is no available rpc server. Hosts: `" + Arrays.toString(hosts) + "`");
         }
     }
 
