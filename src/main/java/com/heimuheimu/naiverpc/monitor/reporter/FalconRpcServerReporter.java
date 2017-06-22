@@ -26,9 +26,11 @@ package com.heimuheimu.naiverpc.monitor.reporter;
 
 import com.heimuheimu.naiverpc.monitor.ExecutionTimeInfo;
 import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
+import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 基于 Falcon 系统的 RPC 服务提供者监控数据上报
@@ -46,8 +48,16 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
 
     private volatile long lastErrorCount = 0;
 
+    private volatile long lastReadBytes = 0;
+
+    private volatile long lastWriteBytes = 0;
+
     public FalconRpcServerReporter(String pushUrl) {
         super(pushUrl);
+    }
+
+    public FalconRpcServerReporter(String pushUrl, Map<String, String> endpointAliasMap) {
+        super(pushUrl, endpointAliasMap);
     }
 
     @Override
@@ -57,6 +67,8 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
         dataList.add(getServerPeakTps());
         dataList.add(getServerAverageExecutionTime());
         dataList.add(getServerErrorCount());
+        dataList.add(getServerReadBytes());
+        dataList.add(getServerWriteBytes());
         return dataList;
     }
 
@@ -99,6 +111,24 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
         errorCountData.value = errorCount - lastErrorCount;
         lastErrorCount = errorCount;
         return errorCountData;
+    }
+
+    private FalconData getServerReadBytes() {
+        FalconData readBytesData = create();
+        readBytesData.metric = "naiverpc_server_read_bytes";
+        long readBytes = SocketMonitor.getGlobalInfo().getReadSize().getSize();
+        readBytesData.value = readBytes - lastReadBytes;
+        lastReadBytes = readBytes;
+        return readBytesData;
+    }
+
+    private FalconData getServerWriteBytes() {
+        FalconData writeBytesData = create();
+        writeBytesData.metric = "naiverpc_server_write_bytes";
+        long writeBytes = SocketMonitor.getGlobalInfo().getWriteSize().getSize();
+        writeBytesData.value = writeBytes - lastWriteBytes;
+        lastWriteBytes = writeBytes;
+        return writeBytesData;
     }
 
 }
