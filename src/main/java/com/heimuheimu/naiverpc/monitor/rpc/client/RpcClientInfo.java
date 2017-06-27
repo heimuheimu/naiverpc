@@ -65,6 +65,11 @@ public class RpcClientInfo {
     private final AtomicLong timeout = new AtomicLong();
 
     /**
+     * RPC 调用因远程主机繁忙被拒绝
+     */
+    private final AtomicLong tooBusy = new AtomicLong();
+
+    /**
      * RPC 调用失败次数
      */
     private final AtomicLong error = new AtomicLong();
@@ -93,6 +98,9 @@ public class RpcClientInfo {
                 break;
             case TIMEOUT:
                 timeout.incrementAndGet();
+                break;
+            case TOO_BUSY:
+                tooBusy.incrementAndGet();
                 break;
             case ERROR:
                 error.incrementAndGet();
@@ -148,6 +156,15 @@ public class RpcClientInfo {
     }
 
     /**
+     * 获得 RPC 调用因远程主机繁忙被拒绝次数
+     *
+     * @return RPC 调用因远程主机繁忙被拒绝
+     */
+    public long getTooBusy() {
+        return tooBusy.get();
+    }
+
+    /**
      * 获得 RPC 调用失败次数
      *
      * @return RPC 调用失败次数
@@ -164,6 +181,7 @@ public class RpcClientInfo {
                 ", executionTimeInfo=" + executionTimeInfo +
                 ", success=" + success +
                 ", timeout=" + timeout +
+                ", tooBusy=" + tooBusy +
                 ", error=" + error +
                 '}';
     }

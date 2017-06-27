@@ -71,6 +71,16 @@ public class RpcClientMonitor {
     }
 
     /**
+     * 增加一个 RPC 调用因远程主机繁忙被拒绝信息统计
+     *
+     * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":" 符号分割，例如：localhost:4182
+     * @param startTime 调用开始时间(nanoTime)
+     */
+    public static void addTooBusy(String host, long startTime) {
+        add(host, startTime, RpcResponse.TOO_BUSY);
+    }
+
+    /**
      * 增加一个 RPC 服务调用失败信息统计
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":" 符号分割，例如：localhost:4182

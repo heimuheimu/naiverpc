@@ -26,6 +26,7 @@ package com.heimuheimu.naiverpc.client;
 
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
+import com.heimuheimu.naiverpc.exception.TooBusyException;
 
 import java.io.Closeable;
 import java.lang.reflect.Method;
@@ -47,9 +48,10 @@ public interface RpcClient extends Closeable {
      * @return 执行结果
      * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
      * @throws TimeoutException 如果执行超时，将抛出此异常
+     * @throws TooBusyException 如果远程服务繁忙，无法执行当前调用请求，将抛出此异常
      * @throws RpcException 执行过程中遇到错误，将抛出此异常
      */
-    Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, RpcException;
+    Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, TooBusyException, RpcException;
 
     /**
      * 执行调用远程服务操作，并返回执行结果
@@ -60,9 +62,10 @@ public interface RpcClient extends Closeable {
      * @return 执行结果
      * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
      * @throws TimeoutException 如果执行超时，将抛出此异常
+     * @throws TooBusyException 如果远程服务繁忙，无法执行当前调用请求，将抛出此异常
      * @throws RpcException 执行过程中遇到错误，将抛出此异常
      */
-    Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, RpcException;
+    Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, TooBusyException, RpcException;
 
     /**
      * 判断当前客户端是否处于可用状态

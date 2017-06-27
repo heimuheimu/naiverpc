@@ -30,6 +30,7 @@ import com.heimuheimu.naiverpc.client.RpcClientListener;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
+import com.heimuheimu.naiverpc.exception.TooBusyException;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,17 +199,32 @@ public class RpcClusterClient implements RpcClient {
     }
 
     @Override
-    public Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, RpcException {
+    public Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
         return execute(method, args, timeout);
     }
 
     @Override
-    public Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, RpcException {
+    public Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
+        return execute(method, args, timeout, 3);
+    }
+
+    private Object execute(Method method, Object[] args, long timeout, int tooBusyRetryTimes) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
         if (state == BeanStatusEnum.NORMAL) {
             RpcClient client = getClient();
             if (client != null) {
                 LOG.debug("Choose RpcClient success. Host: `{}`. Hosts: `{}`", client.getHost(), hosts);
-                return client.execute(method, args, timeout);
+                try {
+                    return client.execute(method, args, timeout);
+                } catch (TooBusyException ex) {
+                    if (tooBusyRetryTimes > 0) {
+                        --tooBusyRetryTimes;
+                        LOG.error("RpcServer is too busy. Host: `{}`. Left retry times: `{}`. Hosts: `{}`.", client.getHost(), tooBusyRetryTimes, hosts);
+                        return execute(method, args, timeout, tooBusyRetryTimes);
+                    } else {
+                        LOG.error("RpcServer is too busy. No more retry. Host: `{}`. Hosts: `{}`.", client.getHost(), hosts);
+                        throw ex;
+                    }
+                }
             } else {
                 throw new IllegalStateException("There is no available RpcClient. Method: `" + method + "`. Arguments: `"
                         + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
@@ -356,6 +372,7 @@ public class RpcClusterClient implements RpcClient {
                                         if (clientList.get(i) == null) {
                                             boolean isSuccess = createRpcClient(i, hosts[i]);
                                             if (isSuccess) {
+                                                rescueTimeArray.set(i, System.currentTimeMillis());
                                                 RPC_CONNECTION_LOG.info("Rescue `{}` to cluster success. Hosts: `{}`.", hosts[i], Arrays.toString(hosts));
                                                 if (rpcClusterClientListener != null) {
                                                     try {

@@ -29,6 +29,7 @@ import com.heimuheimu.naiverpc.channel.RpcChannelListenerSkeleton;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
+import com.heimuheimu.naiverpc.exception.TooBusyException;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
 import com.heimuheimu.naiverpc.monitor.rpc.client.RpcClientMonitor;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
@@ -188,12 +189,12 @@ public class DirectRpcClient implements RpcClient {
     }
 
     @Override
-    public Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, RpcException {
+    public Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
         return execute(method, args, timeout);
     }
 
     @Override
-    public Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, RpcException {
+    public Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
         long startTime = System.nanoTime();
         try {
             if (timeout <= 0) {
@@ -248,13 +249,14 @@ public class DirectRpcClient implements RpcClient {
                             RpcClientMonitor.addError(host, startTime);
                             throw new RpcException("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                         }
+                    } else if (status == ResponseStatusCode.TOO_BUSY) {
+                        LOG.error("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
+                        rpcClientListenerWrapper.onTooBusy(this, method, args);
+                        RpcClientMonitor.addTooBusy(host, startTime);
+                        throw new TooBusyException("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
                     } else {
                         String errorMessage;
                         switch (status) {
-                            case ResponseStatusCode.TOO_BUSY:
-                                errorMessage = "Too busy";
-                                rpcClientListenerWrapper.onTooBusy(this, method, args);
-                                break;
                             case ResponseStatusCode.INVOCATION_TARGET_ERROR:
                                 try {
                                     errorMessage = "Invocation target error: " + transcoder.decode(responsePacket.getBody(),

@@ -48,6 +48,8 @@ public class FalconRpcClientReporter extends AbstractFalconReporter {
 
     private volatile long lastTimeoutCount = 0;
 
+    private volatile long lastTooBusyCount = 0;
+
     private volatile long lastErrorCount = 0;
 
     private volatile long lastReadBytes = 0;
@@ -69,6 +71,7 @@ public class FalconRpcClientReporter extends AbstractFalconReporter {
         dataList.add(getClientPeakTps());
         dataList.add(getClientAverageExecutionTime());
         dataList.add(getClientTimeoutCount());
+        dataList.add(getClientTooBusyCount());
         dataList.add(getClientErrorCount());
         dataList.add(getClientReadBytes());
         dataList.add(getClientWriteBytes());
@@ -114,6 +117,15 @@ public class FalconRpcClientReporter extends AbstractFalconReporter {
         timeoutCountData.value = timeoutCount - lastTimeoutCount;
         lastTimeoutCount = timeoutCount;
         return timeoutCountData;
+    }
+
+    private FalconData getClientTooBusyCount() {
+        FalconData tooBusyCountData = create();
+        tooBusyCountData.metric = "naiverpc_client_too_busy";
+        long tooBusyCount = RpcClientMonitor.getGlobalInfo().getTooBusy();
+        tooBusyCountData.value = tooBusyCount - lastTooBusyCount;
+        lastTooBusyCount = tooBusyCount;
+        return tooBusyCountData;
     }
 
     private FalconData getClientErrorCount() {

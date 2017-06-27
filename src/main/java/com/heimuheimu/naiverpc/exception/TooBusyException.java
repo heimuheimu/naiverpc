@@ -22,33 +22,19 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.monitor.rpc.client;
+package com.heimuheimu.naiverpc.exception;
 
 /**
- * RPC 服务调用响应结果
+ * RPC 服务提供者过于繁忙，无法执行 RPC 调用请求时，抛出此异常
  *
  * @author heimuheimu
  */
-public enum RpcResponse {
+public class TooBusyException extends RuntimeException {
 
-    /**
-     * 调用成功
-     */
-    SUCCESS,
+    private static final long serialVersionUID = -3114513294571041253L;
 
-    /**
-     * 调用超时
-     */
-    TIMEOUT,
-
-    /**
-     * RPC 服务提供者繁忙，无法执行当前 RPC 调用请求
-     */
-    TOO_BUSY,
-
-    /**
-     * 调用错误
-     */
-    ERROR
+    public TooBusyException(String message) {
+        super(message);
+    }
 
 }
