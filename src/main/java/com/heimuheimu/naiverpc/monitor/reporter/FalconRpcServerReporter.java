@@ -27,6 +27,7 @@ package com.heimuheimu.naiverpc.monitor.reporter;
 import com.heimuheimu.naiverpc.monitor.ExecutionTimeInfo;
 import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
 import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
+import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolMonitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +53,8 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
 
     private volatile long lastWriteBytes = 0;
 
+    private volatile long lastRejectedCount = 0;
+
     public FalconRpcServerReporter(String pushUrl) {
         super(pushUrl);
     }
@@ -69,6 +72,12 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
         dataList.add(getServerErrorCount());
         dataList.add(getServerReadBytes());
         dataList.add(getServerWriteBytes());
+        dataList.add(getActiveCount());
+        dataList.add(getPoolSize());
+        dataList.add(getPeakPoolSize());
+        dataList.add(getCorePoolSize());
+        dataList.add(getMaximumPoolSize());
+        dataList.add(getRejectedCount());
         return dataList;
     }
 
@@ -129,6 +138,50 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
         writeBytesData.value = writeBytes - lastWriteBytes;
         lastWriteBytes = writeBytes;
         return writeBytesData;
+    }
+
+    private FalconData getActiveCount() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_active_count";
+        data.value = ThreadPoolMonitor.getActiveCount();
+        return data;
+    }
+
+    private FalconData getPoolSize() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_pool_size";
+        data.value = ThreadPoolMonitor.getPoolSize();
+        return data;
+    }
+
+    private FalconData getPeakPoolSize() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_peak_pool_size";
+        data.value = ThreadPoolMonitor.getPeakPoolSize();
+        return data;
+    }
+
+    private FalconData getCorePoolSize() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_core_pool_size";
+        data.value = ThreadPoolMonitor.getCorePoolSize();
+        return data;
+    }
+
+    private FalconData getMaximumPoolSize() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_maximum_pool_size";
+        data.value = ThreadPoolMonitor.getMaximumPoolSize();
+        return data;
+    }
+
+    private FalconData getRejectedCount() {
+        FalconData data = create();
+        data.metric = "naiverpc_server_threadPool_rejected_count";
+        long rejectedCount = ThreadPoolMonitor.getRejectedCount();
+        data.value = rejectedCount - lastRejectedCount;
+        lastRejectedCount = rejectedCount;
+        return data;
     }
 
 }
