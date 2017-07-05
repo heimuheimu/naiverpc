@@ -70,6 +70,7 @@ public class FalconRpcClientReporter extends AbstractFalconReporter {
         dataList.add(getClientTps());
         dataList.add(getClientPeakTps());
         dataList.add(getClientAverageExecutionTime());
+        dataList.add(getClientMaxExecutionTime());
         dataList.add(getClientTimeoutCount());
         dataList.add(getClientTooBusyCount());
         dataList.add(getClientErrorCount());
@@ -108,6 +109,15 @@ public class FalconRpcClientReporter extends AbstractFalconReporter {
         lastExecutionCount = executionCount;
         lastTotalExecutionTime = totalExecutionTime;
         return avgExecTimeData;
+    }
+
+    private FalconData getClientMaxExecutionTime() {
+        ExecutionTimeInfo executionTimeInfo = RpcClientMonitor.getGlobalInfo().getExecutionTimeInfo();
+        FalconData data = create();
+        data.metric = "naiverpc_client_max_exec_time";
+        data.value = executionTimeInfo.getMaxExecutionTime();
+        executionTimeInfo.resetMaxExecutionTime();
+        return data;
     }
 
     private FalconData getClientTimeoutCount() {
