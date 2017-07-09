@@ -89,6 +89,11 @@ public class RpcChannel implements Closeable {
     private volatile BeanStatusEnum state = BeanStatusEnum.UNINITIALIZED;
 
     /**
+     * 执行初始化、关闭等操作使用的私有锁
+     */
+    private final Object lock = new Object();
+
+    /**
      * 是否已接收到对方的离线请求消息
      */
     private volatile boolean isOffline = false;
@@ -174,57 +179,67 @@ public class RpcChannel implements Closeable {
     /**
      * 执行初始化操作，如果该管道已经初始化完成，则方法不执行任何操作
      */
-    public synchronized void init() {
-        if (state == BeanStatusEnum.UNINITIALIZED) {
-            try {
-                if (socket.isConnected() && !socket.isClosed()) {
-                    long startTime = System.currentTimeMillis();
-                    state = BeanStatusEnum.NORMAL;
-                    SocketConfiguration config = SocketBuilder.getConfig(socket);
-                    String socketAddress = host + "/" + socket.getLocalPort();
-                    writeTask = new WriteTask(config.getSendBufferSize());
-                    writeTask.setName("[Write] " + socketAddress);
-                    writeTask.start();
+    public void init() {
+        synchronized (lock) {
+            if (state == BeanStatusEnum.UNINITIALIZED) {
+                try {
+                    if (socket.isConnected() && !socket.isClosed()) {
+                        long startTime = System.currentTimeMillis();
+                        state = BeanStatusEnum.NORMAL;
+                        SocketConfiguration config = SocketBuilder.getConfig(socket);
+                        String socketAddress = host + "/" + socket.getLocalPort();
+                        writeTask = new WriteTask(config.getSendBufferSize());
+                        writeTask.setName("[Write] " + socketAddress);
+                        writeTask.start();
 
-                    ReadTask readTask = new ReadTask();
-                    readTask.setName("[Read] " + socketAddress);
-                    readTask.start();
-                    RPC_CONNECTION_LOG.info("RpcChannel has been initialized. Cost: {}ms. Host: `{}`. Local port: `{}`. Heartbeat period: `{}`. Config: `{}`.",
-                            (System.currentTimeMillis() - startTime), host, socket.getLocalPort(), heartbeatPeriod, config);
-                } else {
-                    RPC_CONNECTION_LOG.error("Initialize RpcChannel failed. Socket is not connected or has been closed. Host: `{}`.", host);
-                    close();
+                        ReadTask readTask = new ReadTask();
+                        readTask.setName("[Read] " + socketAddress);
+                        readTask.start();
+                        RPC_CONNECTION_LOG.info("RpcChannel has been initialized. Cost: {}ms. Host: `{}`. Local port: `{}`. Heartbeat period: `{}`. Config: `{}`.",
+                                (System.currentTimeMillis() - startTime), host, socket.getLocalPort(), heartbeatPeriod, config);
+                    } else {
+                        RPC_CONNECTION_LOG.error("Initialize RpcChannel failed. Socket is not connected or has been closed. Host: `{}`.", host);
+                        close(false);
+                    }
+                } catch (Exception e) {
+                    RPC_CONNECTION_LOG.error("Initialize RpcChannel failed. Unexpected error: `{}`. Host: `{}`. Heartbeat period: `{}`.", e.getMessage(), host, heartbeatPeriod);
+                    LOG.error("Initialize RpcChannel failed. Unexpected error. Host: `" + host + "`. Socket: `" + socket + "`.", e);
+                    close(false);
                 }
-            } catch (Exception e) {
-                RPC_CONNECTION_LOG.error("Initialize RpcChannel failed. Unexpected error: `{}`. Host: `{}`. Heartbeat period: `{}`.", e.getMessage(), host, heartbeatPeriod);
-                LOG.error("Initialize RpcChannel failed. Unexpected error. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-                close();
             }
         }
     }
 
     @Override
-    public synchronized void close() {
-        if (state != BeanStatusEnum.CLOSED) {
-            long startTime = System.currentTimeMillis();
-            state = BeanStatusEnum.CLOSED;
-            try {
-                //关闭Socket连接
-                socket.close();
-                //停止 Write 线程
-                writeTask.stopSignal = true;
-                writeTask.interrupt();
-                RPC_CONNECTION_LOG.info("RpcChannel has been closed. Cost: {}ms. Host: `{}`. Heartbeat period: `{}`.",
-                        (System.currentTimeMillis() - startTime), host, heartbeatPeriod);
-            } catch (Exception e) {
-                RPC_CONNECTION_LOG.error("Close RpcChannel failed. Unexpected error: `{}`. Host: `{}`.", e.getMessage(), host);
-                LOG.error("Close RpcChannel failed. Unexpected error. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-            }
-            if (rpcChannelListener != null) {
+    public void close() {
+        close(true);
+    }
+
+    private void close(boolean triggerOnClosedEvent) {
+        synchronized (lock) {
+            if (state != BeanStatusEnum.CLOSED) {
+                long startTime = System.currentTimeMillis();
+                state = BeanStatusEnum.CLOSED;
                 try {
-                    rpcChannelListener.onClosed(this);
+                    //关闭Socket连接
+                    socket.close();
+                    //停止 Write 线程
+                    writeTask.stopSignal = true;
+                    writeTask.interrupt();
+                    RPC_CONNECTION_LOG.info("RpcChannel has been closed. Cost: {}ms. Host: `{}`. Heartbeat period: `{}`.",
+                            (System.currentTimeMillis() - startTime), host, heartbeatPeriod);
                 } catch (Exception e) {
-                    LOG.error("Call RpcChannelListener#onClosed() failed. Host: `" + host + "`. Socket: `" + socket + "`.", e);
+                    RPC_CONNECTION_LOG.error("Close RpcChannel failed. Unexpected error: `{}`. Host: `{}`.", e.getMessage(), host);
+                    LOG.error("Close RpcChannel failed. Unexpected error. Host: `" + host + "`. Socket: `" + socket + "`.", e);
+                }
+                if (triggerOnClosedEvent) {
+                    if (rpcChannelListener != null) {
+                        try {
+                            rpcChannelListener.onClosed(this);
+                        } catch (Exception e) {
+                            LOG.error("Call RpcChannelListener#onClosed() failed. Host: `" + host + "`. Socket: `" + socket + "`.", e);
+                        }
+                    }
                 }
             }
         }

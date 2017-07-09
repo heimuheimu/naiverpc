@@ -28,9 +28,9 @@ import com.heimuheimu.naiverpc.channel.RpcChannel;
 import com.heimuheimu.naiverpc.channel.RpcChannelListener;
 import com.heimuheimu.naiverpc.channel.RpcChannelListenerSkeleton;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
+import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
-import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 import com.heimuheimu.naiverpc.server.executors.AsyncJdkRpcExecutor;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author heimuheimu
  * @ThreadSafe
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class RpcServer implements Closeable {
 
     private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");
@@ -205,7 +205,9 @@ public class RpcServer implements Closeable {
                     SocketBuilder.setConfig(socket, socketConfiguration);
                     RpcChannel rpcChannel = new RpcChannel(socket, -1, rpcChannelListener);
                     rpcChannel.init();
-                    activeRpcChannelList.add(rpcChannel);
+                    if (rpcChannel.isActive()) {
+                        activeRpcChannelList.add(rpcChannel);
+                    }
                 } catch (SocketException e) {
                     //do nothing
                 } catch (Exception e) {

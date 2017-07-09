@@ -363,8 +363,7 @@ public class RpcClusterClient implements RpcClient {
                         @Override
                         public void run() {
                             long startTime = System.currentTimeMillis();
-                            RPC_CONNECTION_LOG.info("Rescue task has been started. Cost: {}ms. Hosts: `{}`",
-                                    System.currentTimeMillis() - startTime, hosts);
+                            RPC_CONNECTION_LOG.info("Rescue task has been started. Hosts: `{}`", Arrays.toString(hosts));
                             try {
                                 while (state == BeanStatusEnum.NORMAL &&
                                         aliveClientList.size() < hosts.length) {
