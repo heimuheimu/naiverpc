@@ -31,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * RPC 服务画像
@@ -64,8 +66,11 @@ public class RpcServiceDepiction {
 	 * @throws IllegalArgumentException 如果提供服务的实例没有实现任何接口，将会抛出此异常
 	 */
 	public RpcServiceDepiction(Object target) throws IllegalArgumentException {
+		if (target == null) {
+			throw new IllegalArgumentException("Object could not be null.");
+		}
 		this.target = target;
-		this.interfaces = target.getClass().getInterfaces();
+		this.interfaces = getAllInterfaces(target.getClass()).toArray(new Class<?>[]{});
 		if (this.interfaces.length == 0) {
 			throw new IllegalArgumentException("This object represents a class that implements no interfaces: "
 					+ target);
@@ -110,6 +115,24 @@ public class RpcServiceDepiction {
 					+ target.getClass().getName() + "`. Method unique name: `" + methodUniqueName
 					+ "`. Arguments: `" + Arrays.toString(arguments) + "`.");
 		}
+	}
+
+	/**
+	 * 获得对象 Class 实现的所有接口数组，包含被继承的父接口。
+	 *
+	 * @param clazz 需要查询的对象 Class
+	 * @return 对象实现的所有接口数组，包含被继承的父接口
+	 */
+	private Set<Class<?>> getAllInterfaces(Class<?> clazz) {
+		Set<Class<?>> allInterfaceSet = new LinkedHashSet<>();
+		Class<?>[] interfaces = clazz.getInterfaces();
+		if (interfaces.length > 0) {
+			allInterfaceSet.addAll(Arrays.asList(interfaces));
+			for (Class<?> i : interfaces) {
+				allInterfaceSet.addAll(getAllInterfaces(i));
+			}
+		}
+		return allInterfaceSet;
 	}
 
 }
