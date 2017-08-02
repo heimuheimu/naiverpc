@@ -118,19 +118,22 @@ public class RpcServiceDepiction {
 	}
 
 	/**
-	 * 获得对象 Class 实现的所有接口数组，包含被继承的父接口。
+	 * 获得对象 Class 实现的所有接口数组，包含被继承的父接口
 	 *
 	 * @param clazz 需要查询的对象 Class
 	 * @return 对象实现的所有接口数组，包含被继承的父接口
 	 */
 	private Set<Class<?>> getAllInterfaces(Class<?> clazz) {
 		Set<Class<?>> allInterfaceSet = new LinkedHashSet<>();
-		Class<?>[] interfaces = clazz.getInterfaces();
-		if (interfaces.length > 0) {
-			allInterfaceSet.addAll(Arrays.asList(interfaces));
-			for (Class<?> i : interfaces) {
-				allInterfaceSet.addAll(getAllInterfaces(i));
+		while (clazz != null) {
+			Class<?>[] interfaces = clazz.getInterfaces();
+			if (interfaces.length > 0) {
+				allInterfaceSet.addAll(Arrays.asList(interfaces));
+				for (Class<?> i : interfaces) {
+					allInterfaceSet.addAll(getAllInterfaces(i));
+				}
 			}
+			clazz = clazz.getSuperclass();
 		}
 		return allInterfaceSet;
 	}
