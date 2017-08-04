@@ -136,7 +136,6 @@ public class RpcClusterClient implements RpcClient {
      * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒</p>
      *
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
-     *              @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
      * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
      * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
      */
