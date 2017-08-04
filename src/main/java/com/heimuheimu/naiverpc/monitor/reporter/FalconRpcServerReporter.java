@@ -28,6 +28,7 @@ import com.heimuheimu.naiverpc.monitor.ExecutionTimeInfo;
 import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
 import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
 import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolMonitor;
+import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,42 +154,42 @@ public class FalconRpcServerReporter extends AbstractFalconReporter {
     private FalconData getActiveCount() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_active_count";
-        data.value = ThreadPoolMonitor.getActiveCount();
+        data.value = ThreadPoolMonitor.getActiveCount(ThreadPoolType.RPC_SERVER);
         return data;
     }
 
     private FalconData getPoolSize() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_pool_size";
-        data.value = ThreadPoolMonitor.getPoolSize();
+        data.value = ThreadPoolMonitor.getPoolSize(ThreadPoolType.RPC_SERVER);
         return data;
     }
 
     private FalconData getPeakPoolSize() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_peak_pool_size";
-        data.value = ThreadPoolMonitor.getPeakPoolSize();
+        data.value = ThreadPoolMonitor.getPeakPoolSize(ThreadPoolType.RPC_SERVER);
         return data;
     }
 
     private FalconData getCorePoolSize() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_core_pool_size";
-        data.value = ThreadPoolMonitor.getCorePoolSize();
+        data.value = ThreadPoolMonitor.getCorePoolSize(ThreadPoolType.RPC_SERVER);
         return data;
     }
 
     private FalconData getMaximumPoolSize() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_maximum_pool_size";
-        data.value = ThreadPoolMonitor.getMaximumPoolSize();
+        data.value = ThreadPoolMonitor.getMaximumPoolSize(ThreadPoolType.RPC_SERVER);
         return data;
     }
 
     private FalconData getRejectedCount() {
         FalconData data = create();
         data.metric = "naiverpc_server_threadPool_rejected_count";
-        long rejectedCount = ThreadPoolMonitor.getRejectedCount();
+        long rejectedCount = ThreadPoolMonitor.getRejectedCount(ThreadPoolType.RPC_SERVER);
         data.value = rejectedCount - lastRejectedCount;
         lastRejectedCount = rejectedCount;
         return data;

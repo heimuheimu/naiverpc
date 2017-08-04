@@ -29,6 +29,7 @@ import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
 import com.heimuheimu.naiverpc.monitor.rpc.server.RpcExecuteMonitor;
 import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolMonitor;
+import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolType;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 import com.heimuheimu.naiverpc.packet.RpcPacketBuilder;
 import com.heimuheimu.naiverpc.server.RpcExecuteListener;
@@ -68,7 +69,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 new NamedThreadFactory());
-        ThreadPoolMonitor.register(executorService);
+        ThreadPoolMonitor.register(ThreadPoolType.RPC_SERVER, executorService);
         transcoder = new SimpleTranscoder(compressionThreshold);
         this.rpcExecuteListener = rpcExecuteListener;
     }
@@ -92,7 +93,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
         try  {
             executorService.submit(new RpcTask(channel, packet));
         } catch (RejectedExecutionException e) {
-            ThreadPoolMonitor.addRejectedCount();
+            ThreadPoolMonitor.addRejectedCount(ThreadPoolType.RPC_SERVER);
             LOG.error("AsyncJdkRpcExecutor is too busy. MaximumPoolSize: {}.",  maximumPoolSize);
             channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.TOO_BUSY));
         }

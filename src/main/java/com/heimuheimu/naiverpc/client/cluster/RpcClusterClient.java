@@ -127,7 +127,7 @@ public class RpcClusterClient implements RpcClient {
     private final Object rescueTaskLock = new Object();
 
     /**
-     * 当前 RPC 服务调用集群客户端
+     * 当前 RPC 服务调用集群客户端所处状态
      */
     private volatile BeanStatusEnum state = BeanStatusEnum.NORMAL;
 
@@ -138,8 +138,9 @@ public class RpcClusterClient implements RpcClient {
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
      *              @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
      * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
+     * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
      */
-    public RpcClusterClient(String[] hosts) {
+    public RpcClusterClient(String[] hosts) throws IllegalArgumentException, IllegalStateException {
         this(hosts, null, 5000, 64 * 1024, 30, null, null);
     }
 
@@ -147,21 +148,43 @@ public class RpcClusterClient implements RpcClient {
      * 构造一个 RPC 服务调用集群客户端
      *
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
-     * @param configuration 创建 RPC 服务调用客户端所使用的 Socket 配置信息
-     * @param timeout RPC 服务调用默认超时时间，单位：毫秒
+     * @param configuration 创建 RPC 服务调用客户端所使用的 Socket 配置信息，允许为 {@code null}
+     * @param timeout RPC 服务调用默认超时时间，单位：毫秒，不能小于等于0
      * @param compressionThreshold 最小压缩字节数，当 Value 字节数小于或等于该值，不进行压缩，不能小于等于0
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内单个 RPC 服务调用客户端使用的数据管道如果没有任何数据交互，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
      * @param rpcClientListener RPC 服务调用客户端监听器，允许为 {@code null}
      * @param rpcClusterClientListener RPC 服务调用集群客户端事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
+     * @throws IllegalArgumentException 如果 timeout 小于等于 0
+     * @throws IllegalArgumentException 如果 compressionThreshold 小于等于 0
      * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
      */
     public RpcClusterClient(String[] hosts, SocketConfiguration configuration, int timeout, int compressionThreshold,
-                            int heartbeatPeriod, RpcClientListener rpcClientListener, RpcClusterClientListener rpcClusterClientListener) {
+                            int heartbeatPeriod, RpcClientListener rpcClientListener, RpcClusterClientListener rpcClusterClientListener)
+            throws IllegalArgumentException, IllegalStateException {
         if (hosts == null || hosts.length == 0) {
-            throw new IllegalArgumentException("Hosts could not be empty. Hosts: " + Arrays.toString(hosts)
-                    + ". SocketConfiguration: " + configuration + ". Timeout: " + timeout
-                    + ". Compression threshold: " + compressionThreshold);
+            LOG.error("Create RpcClusterClient failed. Hosts could not be empty. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed. Hosts could not be empty. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+        }
+        if (timeout <= 0) {
+            LOG.error("Create RpcClusterClient failed. Timeout could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed. Timeout could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+        }
+        if (compressionThreshold <= 0) {
+            LOG.error("Create RpcClusterClient failed. CompressionThreshold could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed. CompressionThreshold could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
         }
         this.hosts = hosts;
         this.rescueTimeArray = new AtomicLongArray(hosts.length);
@@ -194,7 +217,12 @@ public class RpcClusterClient implements RpcClient {
             }
         }
         if (aliveClientList.isEmpty()) {
-            throw new IllegalStateException("There is no available rpc server. Hosts: `" + Arrays.toString(hosts) + "`");
+            LOG.error("Create RpcClusterClient failed. There is no available rpc server. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            throw new IllegalStateException("Create RpcClusterClient failed. There is no available rpc server. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
+                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
         }
     }
 
@@ -226,10 +254,14 @@ public class RpcClusterClient implements RpcClient {
                     }
                 }
             } else {
+                LOG.error("There is no available RpcClient. Method: `" + method + "`. Arguments: `"
+                        + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
                 throw new IllegalStateException("There is no available RpcClient. Method: `" + method + "`. Arguments: `"
                         + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
             }
         } else {
+            LOG.error("RpcClusterClient has been closed. Method: `" + method + "`. Arguments: `"
+                    + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
             throw new IllegalStateException("RpcClusterClient has been closed. Method: `" + method + "`. Arguments: `"
                     + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
         }
@@ -354,6 +386,9 @@ public class RpcClusterClient implements RpcClient {
         return false;
     }
 
+    /**
+     * 启动 RPC 调用客户端重连恢复任务
+     */
     private void startRescueTask() {
         if (state == BeanStatusEnum.NORMAL) {
             synchronized (rescueTaskLock) {
@@ -363,7 +398,7 @@ public class RpcClusterClient implements RpcClient {
                         @Override
                         public void run() {
                             long startTime = System.currentTimeMillis();
-                            RPC_CONNECTION_LOG.info("Rescue task has been started. Hosts: `{}`", Arrays.toString(hosts));
+                            RPC_CONNECTION_LOG.info("RpcClusterClient rescue task has been started. Hosts: `{}`", Arrays.toString(hosts));
                             try {
                                 while (state == BeanStatusEnum.NORMAL &&
                                         aliveClientList.size() < hosts.length) {
@@ -385,16 +420,18 @@ public class RpcClusterClient implements RpcClient {
                                             }
                                         }
                                     }
-                                    Thread.sleep(5000); //delay 5000ms
+                                    if (aliveClientList.size() < hosts.length) {
+                                        Thread.sleep(5000); //delay 5000ms
+                                    }
                                 }
                                 rescueOver();
-                                RPC_CONNECTION_LOG.info("Rescue task has been finished. Cost: {}ms. Hosts: `{}`",
+                                RPC_CONNECTION_LOG.info("RpcClusterClient rescue task has been finished. Cost: {}ms. Hosts: `{}`",
                                         System.currentTimeMillis() - startTime, hosts);
                             } catch (Exception e) {
                                 rescueOver();
-                                RPC_CONNECTION_LOG.info("Rescue task executed failed: `{}`. Cost: {}ms. Hosts: `{}`",
+                                RPC_CONNECTION_LOG.info("RpcClusterClient rescue task executed failed: `{}`. Cost: {}ms. Hosts: `{}`",
                                         e.getMessage(), System.currentTimeMillis() - startTime, hosts);
-                                LOG.error("Rescue task executed failed. Hosts: `" + Arrays.toString(hosts) + "`", e);
+                                LOG.error("RpcClusterClient rescue task executed failed. Hosts: `" + Arrays.toString(hosts) + "`", e);
                             }
                         }
 

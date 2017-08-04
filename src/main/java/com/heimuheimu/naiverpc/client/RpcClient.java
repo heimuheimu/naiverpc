@@ -44,7 +44,7 @@ public interface RpcClient extends Closeable {
      * 执行调用远程服务操作，并返回执行结果，超时时间使用客户端默认的超时时间设置。
      *
      * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数
+     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
      * @return 执行结果
      * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
      * @throws TimeoutException 如果执行超时，将抛出此异常
@@ -57,7 +57,7 @@ public interface RpcClient extends Closeable {
      * 执行调用远程服务操作，并返回执行结果
      *
      * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数
+     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
      * @param timeout 超时时间，单位为毫秒，如果小于等于 0，则使用客户端默认的超时时间设置
      * @return 执行结果
      * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
