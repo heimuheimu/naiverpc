@@ -85,6 +85,7 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
         for (String basePackage : basePackages) {
             candidates.addAll(interfaceFinder.find(basePackage, classNameRegex));
         }
+        LOG.info("Base package: `{}`. Class name regex: `{}`. Candidates: `{}`.", basePackages, classNameRegex, candidates);
         if (!candidates.isEmpty()) {
             for (Class<?> clz : candidates) {
                 try {
