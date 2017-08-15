@@ -80,8 +80,10 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
         Class<?>[] interfaces = depiction.getInterfaces();
         for(Class<?> proxyInterface : interfaces) {
             String interfaceName = proxyInterface.getName();
-            if (depictionMap.containsKey(interfaceName)) {
-                LOG.error("`{}` is existed. It will be overridden.", proxyInterface);
+            RpcServiceDepiction existedDepiction = depictionMap.get(interfaceName);
+            if (existedDepiction != null && existedDepiction.getTarget() != service) {
+                LOG.error("`{}` is existed. It will be overridden. Previous target: `{}`. New target: `{}`.",
+                        proxyInterface, existedDepiction.getTarget(), service);
             }
             depictionMap.put(interfaceName, depiction);
             LOG.info("`{}` has been registered.", proxyInterface);

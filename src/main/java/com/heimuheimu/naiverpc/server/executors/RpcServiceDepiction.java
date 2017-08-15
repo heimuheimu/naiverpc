@@ -88,6 +88,15 @@ public class RpcServiceDepiction {
 	}
 
 	/**
+	 * 获得提供服务的实例
+	 *
+	 * @return 提供服务的实例
+	 */
+	public Object getTarget() {
+		return target;
+	}
+
+	/**
 	 * 获得可提供服务的接口列表
 	 *
 	 * @return 可提供服务的接口列表
