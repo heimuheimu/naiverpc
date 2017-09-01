@@ -47,7 +47,7 @@ public class RpcClientExecutionDataCollector extends AbstractExecutionDataCollec
         ERROR_METRIC_SUFFIX_MAP = new HashMap<>();
         ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY, "_too_busy");
         ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT, "_timeout");
-        ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT, "_error");
+        ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR, "_error");
     }
 
     private final String collectorName;
