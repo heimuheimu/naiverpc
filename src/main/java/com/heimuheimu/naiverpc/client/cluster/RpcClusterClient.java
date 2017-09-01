@@ -48,7 +48,6 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * @author heimuheimu
  * @ThreadSafe
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class RpcClusterClient implements RpcClient {
 
     private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");

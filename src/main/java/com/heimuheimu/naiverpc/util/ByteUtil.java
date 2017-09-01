@@ -56,7 +56,7 @@ public class ByteUtil {
      * @param offset 数组起始索引
      * @return 转换后的 int 值
      */
-    public static int readInt(byte[] bytes, @SuppressWarnings("SameParameterValue") int offset) {
+    public static int readInt(byte[] bytes, int offset) {
         return (((bytes[offset++]) << 24) | ((bytes[offset++] & 0xff) << 16)
                 | ((bytes[offset++] & 0xff) << 8) | ((bytes[offset] & 0xff)));
     }

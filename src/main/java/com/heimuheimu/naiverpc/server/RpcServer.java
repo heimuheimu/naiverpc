@@ -50,7 +50,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author heimuheimu
  * @ThreadSafe
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class RpcServer implements Closeable {
 
     private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");

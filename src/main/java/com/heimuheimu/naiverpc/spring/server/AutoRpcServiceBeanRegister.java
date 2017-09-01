@@ -41,7 +41,6 @@ import java.util.List;
  *
  * @author heimuheimu
  */
-@SuppressWarnings("unused")
 public class AutoRpcServiceBeanRegister implements ApplicationContextAware, InitializingBean {
 
     private static final Logger LOG = LoggerFactory.getLogger(AutoRpcServiceBeanRegister.class);

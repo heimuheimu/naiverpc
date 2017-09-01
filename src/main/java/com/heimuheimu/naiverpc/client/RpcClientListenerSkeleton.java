@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
  *
  * @author heimuheimu
  */
-@SuppressWarnings("unused")
 public abstract class RpcClientListenerSkeleton implements RpcClientListener {
 
     @Override

@@ -45,7 +45,6 @@ import java.util.List;
  *
  * @author heimuheimu
  */
-@SuppressWarnings("unused")
 public class AutoRpcProxyBeanRegister implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(AutoRpcProxyBeanRegister.class);

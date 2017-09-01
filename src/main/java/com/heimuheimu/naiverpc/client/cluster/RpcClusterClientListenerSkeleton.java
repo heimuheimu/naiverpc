@@ -30,7 +30,6 @@ package com.heimuheimu.naiverpc.client.cluster;
  *
  * @author heimuheimu
  */
-@SuppressWarnings("unused")
 public abstract class RpcClusterClientListenerSkeleton implements RpcClusterClientListener {
 
     @Override
