@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.monitor;
 
 /**
- * RPC 调用方 Falcon 数据监控常量
+ * RPC Falcon 数据监控常量
  *
  * @author heimuheimu
  */
