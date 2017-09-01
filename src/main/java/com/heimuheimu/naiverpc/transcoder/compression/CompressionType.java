@@ -42,7 +42,7 @@ public class CompressionType {
 
     /**
      * 使用 LZF 进行压缩、解压
-     * @see {@link LZFCompressionService}
+     * @see LZFCompressionService
      */
     public static final byte LZF = 1;
 

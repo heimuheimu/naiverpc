@@ -109,7 +109,7 @@ public class RpcServer implements Closeable {
                      RpcExecuteListener rpcExecuteListener) {
         this.port = port;
         this.socketConfiguration = socketConfiguration;
-        this.rpcExecutor = new AsyncJdkRpcExecutor(maximumPoolSize, compressionThreshold, rpcExecuteListener);
+        this.rpcExecutor = new AsyncJdkRpcExecutor(port, maximumPoolSize, compressionThreshold, rpcExecuteListener);
     }
 
     /**

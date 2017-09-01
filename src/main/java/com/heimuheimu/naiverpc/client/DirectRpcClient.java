@@ -24,16 +24,18 @@
 
 package com.heimuheimu.naiverpc.client;
 
+import com.heimuheimu.naivemonitor.monitor.ExecutionMonitor;
 import com.heimuheimu.naiverpc.channel.RpcChannel;
 import com.heimuheimu.naiverpc.channel.RpcChannelListenerSkeleton;
+import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
 import com.heimuheimu.naiverpc.exception.TooBusyException;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
-import com.heimuheimu.naiverpc.monitor.rpc.client.RpcClientMonitor;
+import com.heimuheimu.naiverpc.monitor.client.RpcClientCompressionMonitorFactory;
+import com.heimuheimu.naiverpc.monitor.client.RpcClientExecutionMonitorFactory;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
-import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 import com.heimuheimu.naiverpc.packet.RpcPacketBuilder;
 import com.heimuheimu.naiverpc.transcoder.SimpleTranscoder;
@@ -58,7 +60,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author heimuheimu
  * @ThreadSafe
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class DirectRpcClient implements RpcClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(DirectRpcClient.class);
@@ -102,6 +103,11 @@ public class DirectRpcClient implements RpcClient {
      * RPC 服务调用客户端监听器封装类，捕获监听器执行错误
      */
     private final RpcClientListenerWrapper rpcClientListenerWrapper;
+
+    /**
+     * 当前 RPC 服务调用客户端使用的操作执行信息监控器
+     */
+    private final ExecutionMonitor executionMonitor;
 
     /**
      * 连续 {@link TimeoutException} 异常出现次数
@@ -159,7 +165,8 @@ public class DirectRpcClient implements RpcClient {
         }
         this.host = host;
         this.timeout = timeout;
-        this.transcoder = new SimpleTranscoder(compressionThreshold);
+        this.transcoder = new SimpleTranscoder(compressionThreshold, RpcClientCompressionMonitorFactory.get());
+        this.executionMonitor = RpcClientExecutionMonitorFactory.get(host);
         this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, new RpcChannelListenerSkeleton() {
 
             @Override
@@ -200,7 +207,7 @@ public class DirectRpcClient implements RpcClient {
             if (timeout <= 0) {
                 LOG.error("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 rpcClientListenerWrapper.onError(this, method, args);
-                RpcClientMonitor.addError(host, startTime);
+                executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                 throw new RpcException("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
             }
             validateArguments(startTime, method, args);
@@ -211,7 +218,7 @@ public class DirectRpcClient implements RpcClient {
             if (!rpcChannel.isActive()) {
                 LOG.error("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                 rpcClientListenerWrapper.onClosed(this, method, args);
-                RpcClientMonitor.addError(host, startTime);
+                executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                 throw new IllegalStateException("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
             }
 
@@ -222,7 +229,7 @@ public class DirectRpcClient implements RpcClient {
             } catch (Exception e) {
                 LOG.error("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                 rpcClientListenerWrapper.onError(this, method, args);
-                RpcClientMonitor.addError(host, startTime);
+                executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                 throw new RpcException("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
             }
             CountDownLatch latch = new CountDownLatch(1);
@@ -241,18 +248,18 @@ public class DirectRpcClient implements RpcClient {
                     if (status == ResponseStatusCode.SUCCESS) {
                         try {
                             Object v = transcoder.decode(responsePacket.getBody(), responsePacket.getSerializationType(), responsePacket.getCompressionType());
-                            RpcClientMonitor.addSuccess(host, startTime);
+                            executionMonitor.onExecutedSuccess(startTime);
                             return v;
                         } catch (Exception e) {
                             LOG.error("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                             rpcClientListenerWrapper.onError(this, method, args);
-                            RpcClientMonitor.addError(host, startTime);
+                            executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                             throw new RpcException("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
                         }
                     } else if (status == ResponseStatusCode.TOO_BUSY) {
                         LOG.error("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
                         rpcClientListenerWrapper.onTooBusy(this, method, args);
-                        RpcClientMonitor.addTooBusy(host, startTime);
+                        executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY);
                         throw new TooBusyException("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
                     } else {
                         String errorMessage;
@@ -287,13 +294,13 @@ public class DirectRpcClient implements RpcClient {
                                 rpcClientListenerWrapper.onError(this, method, args);
                         }
                         LOG.error("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
-                        RpcClientMonitor.addError(host, startTime);
+                        executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                         throw new RpcException("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
                     }
                 } else {
                     LOG.error("Empty response packet. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                     rpcClientListenerWrapper.onError(this, method, args);
-                    RpcClientMonitor.addError(host, startTime);
+                    executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                     throw new RpcException("Empty response packet. Maybe DirectRpcClient has been closed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
                 }
             } else {
@@ -314,7 +321,7 @@ public class DirectRpcClient implements RpcClient {
                     close();
                 }
                 rpcClientListenerWrapper.onTimeout(this, method, args);
-                RpcClientMonitor.addTimeout(host, startTime);
+                executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT);
                 throw new TimeoutException("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
                         + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
             }
@@ -331,7 +338,7 @@ public class DirectRpcClient implements RpcClient {
         if (method == null) {
             LOG.error("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
             rpcClientListenerWrapper.onError(this, null, args);
-            RpcClientMonitor.addError(host, startTime);
+            executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
             throw new RpcException("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
         }
         Class<?>[] parameterTypes = method.getParameterTypes();
@@ -339,7 +346,7 @@ public class DirectRpcClient implements RpcClient {
         if (parameterTypes.length != argsLength) {
             LOG.error("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
             rpcClientListenerWrapper.onError(this, method, args);
-            RpcClientMonitor.addError(host, startTime);
+            executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
             throw new RpcException("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
         }
         if (args != null && args.length > 0) {
@@ -358,7 +365,7 @@ public class DirectRpcClient implements RpcClient {
                     } else {
                         LOG.error("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                         rpcClientListenerWrapper.onError(this, method, args);
-                        RpcClientMonitor.addError(host, startTime);
+                        executionMonitor.onExecutedError(startTime, RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
                         throw new RpcException("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                     }
                 }

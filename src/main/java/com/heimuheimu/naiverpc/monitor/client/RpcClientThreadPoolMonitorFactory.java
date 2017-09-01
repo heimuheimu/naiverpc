@@ -22,33 +22,28 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.constant;
+package com.heimuheimu.naiverpc.monitor.client;
+
+import com.heimuheimu.naivemonitor.monitor.ThreadPoolMonitor;
 
 /**
- * RPC 操作代码
+ * RPC 客户端使用的线程池信息监控器工厂类
  *
  * @author heimuheimu
- * @see com.heimuheimu.naiverpc.packet.RpcPacket
  */
-public class OperationCode {
+public class RpcClientThreadPoolMonitorFactory {
 
-    private OperationCode() {
-        //prevent create instance
+    private RpcClientThreadPoolMonitorFactory() {
+        //private constructor
     }
 
-    /**
-     * 远程服务调用
-     */
-    public static final byte REMOTE_PROCEDURE_CALL = 0;
+    private static final ThreadPoolMonitor CLIENT_THREAD_POOL_MONITOR = new ThreadPoolMonitor();
 
     /**
-     * 心跳检测
+     * 获得 RPC 客户端使用的线程池信息监控器
      */
-    public static final byte HEARTBEAT = 1;
-
-    /**
-     * 下线
-     */
-    public static final byte OFFLINE = 2;
+    public static ThreadPoolMonitor get() {
+        return CLIENT_THREAD_POOL_MONITOR;
+    }
 
 }

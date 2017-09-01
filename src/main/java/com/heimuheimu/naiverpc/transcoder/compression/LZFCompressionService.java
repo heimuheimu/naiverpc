@@ -26,8 +26,6 @@ package com.heimuheimu.naiverpc.transcoder.compression;
 import com.ning.compress.lzf.LZFDecoder;
 import com.ning.compress.lzf.LZFEncoder;
 import com.ning.compress.lzf.LZFException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * LZF 压缩、解压实现，更多信息可参考：

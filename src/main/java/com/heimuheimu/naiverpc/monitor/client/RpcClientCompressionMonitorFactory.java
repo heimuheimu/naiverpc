@@ -22,33 +22,28 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.monitor.rpc.client;
+package com.heimuheimu.naiverpc.monitor.client;
+
+import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
 
 /**
- * RPC 服务调用响应结果
+ * RPC 客户端使用的压缩信息监控器工厂类
  *
  * @author heimuheimu
  */
-public enum RpcResponse {
+public class RpcClientCompressionMonitorFactory {
+
+    private RpcClientCompressionMonitorFactory() {
+        //private constructor
+    }
+
+    private static final CompressionMonitor CLIENT_COMPRESSION_MONITOR = new CompressionMonitor();
 
     /**
-     * 调用成功
+     * 获得 RPC 客户端使用的线程池信息监控器
      */
-    SUCCESS,
-
-    /**
-     * 调用超时
-     */
-    TIMEOUT,
-
-    /**
-     * RPC 服务提供者繁忙，无法执行当前 RPC 调用请求
-     */
-    TOO_BUSY,
-
-    /**
-     * 调用错误
-     */
-    ERROR
+    public static CompressionMonitor get() {
+        return CLIENT_COMPRESSION_MONITOR;
+    }
 
 }

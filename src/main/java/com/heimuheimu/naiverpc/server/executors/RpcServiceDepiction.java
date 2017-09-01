@@ -111,8 +111,6 @@ public class RpcServiceDepiction {
 	 * @param methodUniqueName 唯一方法名
 	 * @param arguments 参数数组
 	 * @return 方法返回结果
-	 * @throws NullPointerException 如果方法不存在，将会抛出此异常
-	 * @throws Exception 如果方法执行过程中遇到错误，将会抛出此异常
 	 */
 	public Object execute(String methodUniqueName, Object[] arguments)
 			throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {

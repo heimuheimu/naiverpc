@@ -28,8 +28,7 @@ import com.heimuheimu.naiverpc.client.DirectRpcClient;
 import com.heimuheimu.naiverpc.client.RpcClient;
 import com.heimuheimu.naiverpc.client.RpcClientListener;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
-import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolMonitor;
-import com.heimuheimu.naiverpc.monitor.thread.ThreadPoolType;
+import com.heimuheimu.naiverpc.monitor.client.RpcClientThreadPoolMonitorFactory;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -191,7 +190,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
         this.rpcClientListener = rpcClientListener;
         this.executorService = new ThreadPoolExecutor(0, maximumPoolSize,
                 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), new NamedThreadFactory());
-        ThreadPoolMonitor.register(ThreadPoolType.RPC_CLIENT, executorService);
+        RpcClientThreadPoolMonitorFactory.get().register(executorService);
         this.hostIndexMap = new HashMap<>();
         int activeClientCount = 0;
         for (int i = 0; i < hosts.length; i++) {
@@ -259,7 +258,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
                         Future<BroadcastResponse> future = executorService.submit(new RpcExecuteTask(client, method, args, timeout));
                         futureMap.put(client.getHost(), future);
                     } catch (RejectedExecutionException e) {
-                        ThreadPoolMonitor.addRejectedCount(ThreadPoolType.RPC_CLIENT);
+                        RpcClientThreadPoolMonitorFactory.get().onRejected();
                         LOG.error("Broadcast rpc execute failed: `too busy`. Host: `" + host + "`. Method: `" + method
                                 + "`. Arguments: `" + Arrays.toString(args) + "`. Timeout: `" + timeout + "`.", e);
                     }

@@ -22,33 +22,27 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.constant;
+package com.heimuheimu.naiverpc.monitor;
 
 /**
- * RPC 操作代码
+ * RPC 调用方 Falcon 数据监控常量
  *
  * @author heimuheimu
- * @see com.heimuheimu.naiverpc.packet.RpcPacket
  */
-public class OperationCode {
+public class FalconReporterConstant {
 
-    private OperationCode() {
-        //prevent create instance
+    private FalconReporterConstant() {
+        //private constructor
     }
 
     /**
-     * 远程服务调用
+     * Falcon 数据使用的模块名
      */
-    public static final byte REMOTE_PROCEDURE_CALL = 0;
+    public static final String MODULE_NAME = "naiverpc";
 
     /**
-     * 心跳检测
+     * Falcon 数据上报周期
      */
-    public static final byte HEARTBEAT = 1;
-
-    /**
-     * 下线
-     */
-    public static final byte OFFLINE = 2;
+    public static final int REPORT_PERIOD = 15;
 
 }

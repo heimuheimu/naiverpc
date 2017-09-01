@@ -78,7 +78,7 @@ public interface RpcExecuteListener {
      * 当 RPC 服务执行时间大于 {@link #SLOW_EXECUTION_THRESHOLD} 时，将触发该监听事件
      *
      * @param rpcRequestMessage RPC 服务调用请求消息
-     * @param executedNanoTime
+     * @param executedNanoTime 执行总时间，单位：纳秒
      */
     void onSlowExecution(RpcRequestMessage rpcRequestMessage, long executedNanoTime);
 

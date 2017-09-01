@@ -22,33 +22,28 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.constant;
+package com.heimuheimu.naiverpc.monitor.server;
+
+import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
 
 /**
- * RPC 操作代码
+ * RPC 服务端使用的压缩信息监控器工厂类
  *
  * @author heimuheimu
- * @see com.heimuheimu.naiverpc.packet.RpcPacket
  */
-public class OperationCode {
+public class RpcServerCompressionMonitorFactory {
 
-    private OperationCode() {
-        //prevent create instance
+    private RpcServerCompressionMonitorFactory() {
+        //private constructor
     }
 
-    /**
-     * 远程服务调用
-     */
-    public static final byte REMOTE_PROCEDURE_CALL = 0;
+    private static final CompressionMonitor SERVER_COMPRESSION_MONITOR = new CompressionMonitor();
 
     /**
-     * 心跳检测
+     * 获得 RPC 客户端使用的线程池信息监控器
      */
-    public static final byte HEARTBEAT = 1;
-
-    /**
-     * 下线
-     */
-    public static final byte OFFLINE = 2;
+    public static CompressionMonitor get() {
+        return SERVER_COMPRESSION_MONITOR;
+    }
 
 }

@@ -24,8 +24,6 @@
 
 package com.heimuheimu.naiverpc.constant;
 
-import org.omg.CORBA.PUBLIC_MEMBER;
-
 /**
  * RPC 调用响应状态码
  *

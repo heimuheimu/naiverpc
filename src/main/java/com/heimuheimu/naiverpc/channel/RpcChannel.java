@@ -24,10 +24,12 @@
 
 package com.heimuheimu.naiverpc.channel;
 
+import com.heimuheimu.naivemonitor.monitor.SocketMonitor;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
-import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
+import com.heimuheimu.naiverpc.monitor.client.RpcClientSocketMonitorFactory;
+import com.heimuheimu.naiverpc.monitor.server.RpcServerSocketMonitorFactory;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
@@ -84,6 +86,11 @@ public class RpcChannel implements Closeable {
     private final RpcChannelListener rpcChannelListener;
 
     /**
+     * 当前 RPC 数据交互管道使用的 Socket 信息监控器
+     */
+    private final SocketMonitor socketMonitor;
+
+    /**
      * 当前实例所处状态
      */
     private volatile BeanStatusEnum state = BeanStatusEnum.UNINITIALIZED;
@@ -104,7 +111,7 @@ public class RpcChannel implements Closeable {
     private WriteTask writeTask;
 
     /**
-     * 创建一个 RPC 服务调用者 与 RPC 服务提供者进行数据交互的管道，数据载体为 {@link RpcPacket}
+     * 创建一个 RPC 服务调用者 与 RPC 服务提供者进行数据交互的管道，数据载体为 {@link RpcPacket}，该构造函数由 RPC 客户端创建交互管道调用
      * <p><b>注意：</b>管道必须执行初始化操作过后才可正常使用</p>
      *
      * @param host 远程主机地址，由主机名和端口组成，":"符号分割，例如：localhost:9610
@@ -120,10 +127,11 @@ public class RpcChannel implements Closeable {
         this.socket = SocketBuilder.create(host, configuration);
         this.heartbeatPeriod = heartbeatPeriod;
         this.rpcChannelListener = rpcChannelListener;
+        this.socketMonitor = RpcClientSocketMonitorFactory.get(host);
     }
 
     /**
-     * 创建一个 RPC 服务调用者 与 RPC 服务提供者进行数据交互的管道，数据载体为 {@link RpcPacket}
+     * 创建一个 RPC 服务调用者 与 RPC 服务提供者进行数据交互的管道，数据载体为 {@link RpcPacket}，该构造函数由 RPC 服务端创建交互管道调用
      * <p><b>注意：</b>管道必须执行初始化操作过后才可正常使用</p>
      *
      * @param socket 与远程主机地址建立的 Socket 连接，不允许为 {@code null}
@@ -136,10 +144,12 @@ public class RpcChannel implements Closeable {
         if (socket == null) {
             throw new NullPointerException("Socket could not be null.");
         }
-        this.host = socket.getInetAddress().getCanonicalHostName() + ":" + socket.getPort();
+        String remoteHostName = socket.getInetAddress().getCanonicalHostName();
+        this.host = remoteHostName + ":" + socket.getPort();
         this.socket = socket;
         this.heartbeatPeriod = heartbeatPeriod;
         this.rpcChannelListener = rpcChannelListener;
+        this.socketMonitor = RpcServerSocketMonitorFactory.get(socket.getLocalPort(), remoteHostName);
     }
 
     /**
@@ -299,7 +309,7 @@ public class RpcChannel implements Closeable {
                                 System.arraycopy(rpcPacket.getHeader(), 0, rpcPacketByteArray, 0, rpcPacket.getHeader().length);
                                 System.arraycopy(rpcPacket.getBody(), 0, rpcPacketByteArray, rpcPacket.getHeader().length, rpcPacket.getBody().length);
                                 outputStream.write(rpcPacketByteArray);
-                                SocketMonitor.addWrite(host, rpcPacketByteArray.length);
+                                socketMonitor.onWritten(rpcPacketByteArray.length);
                             } else {
                                 addToMergedPacket(rpcPacket);
                             }
@@ -342,7 +352,7 @@ public class RpcChannel implements Closeable {
                 destPos += body.length;
             }
             outputStream.write(mergedPacket, 0,  destPos);
-            SocketMonitor.addWrite(host, destPos);
+            socketMonitor.onWritten(destPos);
             resetMergedPacket();
         }
 
@@ -361,7 +371,7 @@ public class RpcChannel implements Closeable {
         private final RpcPacketReader reader;
 
         private ReadTask () throws IOException {
-            this.reader = new RpcPacketReader(host, socket.getInputStream());
+            this.reader = new RpcPacketReader(socketMonitor, socket.getInputStream());
         }
 
         @Override

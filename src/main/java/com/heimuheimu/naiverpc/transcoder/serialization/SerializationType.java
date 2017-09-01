@@ -38,8 +38,8 @@ public class SerializationType {
     /**
      * 使用 Java 自带的序列化方式
      *
-     * @see {@link java.io.Serializable}
-     * @see {@link java.io.Externalizable}
+     * @see java.io.Serializable
+     * @see java.io.Externalizable
      */
     public static final byte JAVA = 1;
 

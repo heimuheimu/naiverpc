@@ -24,7 +24,7 @@
 
 package com.heimuheimu.naiverpc.packet;
 
-import com.heimuheimu.naiverpc.monitor.socket.SocketMonitor;
+import com.heimuheimu.naivemonitor.monitor.SocketMonitor;
 import com.heimuheimu.naiverpc.util.ByteUtil;
 
 import java.io.IOException;
@@ -40,12 +40,12 @@ import java.util.Arrays;
  */
 public class RpcPacketReader {
 
-    private final String host;
+    private final SocketMonitor socketMonitor;
 
     private final InputStream inputStream;
 
-    public RpcPacketReader(String host, InputStream inputStream) {
-        this.host = host;
+    public RpcPacketReader(SocketMonitor socketMonitor, InputStream inputStream) {
+        this.socketMonitor = socketMonitor;
         this.inputStream = inputStream;
     }
 
@@ -55,7 +55,7 @@ public class RpcPacketReader {
         byte[] body = null;
         while (headerPos < 24) {
             int readBytes = inputStream.read(header, headerPos, 24 - headerPos);
-            SocketMonitor.addRead(host, readBytes);
+            socketMonitor.onRead(readBytes);
             if (readBytes >= 0) {
                 headerPos += readBytes;
             } else {
@@ -65,7 +65,7 @@ public class RpcPacketReader {
         }
         if (header[0] != RpcPacket.RESPONSE_MAGIC_BYTE &&
                 header[0] != RpcPacket.REQUEST_MAGIC_BYTE) {
-            throw new IllegalStateException("Invalid magic byte: `" + header[0] + "`. Host: `" + host
+            throw new IllegalStateException("Invalid magic byte: `" + header[0] + "`. Host: `" + socketMonitor.getHost()
                     + "`. Header: `" + Arrays.toString(header) + "`.");
         }
         int bodyLength = ByteUtil.readInt(header, 4);
@@ -74,7 +74,7 @@ public class RpcPacketReader {
             int bodyPos = 0;
             while (bodyPos < bodyLength) {
                 int readBytes = inputStream.read(body, bodyPos, bodyLength - bodyPos);
-                SocketMonitor.addRead(host, readBytes);
+                socketMonitor.onRead(readBytes);
                 if (readBytes >= 0) {
                     bodyPos += readBytes;
                 } else {

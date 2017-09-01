@@ -24,7 +24,7 @@
 
 package com.heimuheimu.naiverpc.transcoder;
 
-import com.heimuheimu.naiverpc.monitor.compress.CompressionMonitor;
+import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
 import com.heimuheimu.naiverpc.transcoder.compression.CompressionService;
 import com.heimuheimu.naiverpc.transcoder.compression.CompressionType;
 import com.heimuheimu.naiverpc.transcoder.compression.LZFCompressionService;
@@ -55,8 +55,15 @@ public class SimpleTranscoder implements Transcoder {
      */
     private final int compressionThreshold;
 
-    public SimpleTranscoder(int compressionThreshold) {
+    /**
+     * 当前转换器使用的压缩信息监控器
+     */
+    private final CompressionMonitor compressionMonitor;
+
+    public SimpleTranscoder(int compressionThreshold, CompressionMonitor compressionMonitor) {
         this.compressionThreshold = compressionThreshold;
+        this.compressionMonitor = compressionMonitor;
+
     }
 
     @Override
@@ -66,13 +73,11 @@ public class SimpleTranscoder implements Transcoder {
         //使用 Java 自带的序列化方式
         flags[0] = SerializationType.JAVA;
         byte[] valueBytes = javaSerializationService.encode(value);
-        CompressionMonitor.addSize(valueBytes.length);
         if (valueBytes.length > compressionThreshold) {
             int preCompressedLength = valueBytes.length;
-            long startTime = System.nanoTime();
             //使用 LZF 压缩算法
             valueBytes = lzfCompressionService.compress(valueBytes);
-            CompressionMonitor.addCompress(preCompressedLength, valueBytes.length, startTime);
+            compressionMonitor.onCompressed(preCompressedLength - valueBytes.length);
             flags[1] = CompressionType.LZF;
         } else {
             flags[1] = CompressionType.NONE;
@@ -89,10 +94,7 @@ public class SimpleTranscoder implements Transcoder {
             case CompressionType.NONE:
                 break;
             case CompressionType.LZF:
-                int preDecompressedLength = encodedValue.length;
-                long startTime = System.nanoTime();
                 encodedValue = lzfCompressionService.decompress(encodedValue);
-                CompressionMonitor.addDecompress(preDecompressedLength, encodedValue.length, startTime);
                 break;
             default:
                 throw new UnsupportedOperationException("Invalid compression type: `" + compressionType + "`.");

@@ -39,7 +39,7 @@ import java.util.Arrays;
  *     <li>第 4 个字节为 <b>body compression type</b>，Body 采用的压缩格式</li>
  *     <li>第 5 到 8 个字节为 <b>body length</b>，Body 长度</li>
  *     <li>第 9 到 16 个字节为 <b>packet id</b> ，在同一个通信管道内发送的请求数据包，该 ID 值需唯一</li>
- *     <li>第 17 个字节为 <b>reponse status</b>，响应状态码，0 代表成功，错误码则由具体的操作自行定义，该字节仅在响应数据包中有意义</li>
+ *     <li>第 17 个字节为 <b>response status</b>，响应状态码，0 代表成功，错误码则由具体的操作自行定义，该字节仅在响应数据包中有意义</li>
  *     <li>第 18 到 24 字节为保留字节，由具体的操作自行定义</li>
  * </ul>
  *
