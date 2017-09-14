@@ -39,14 +39,17 @@ public class RpcProxyFactoryBean<T> implements FactoryBean<T> {
 
     private final RpcClient rpcClient;
 
+    private final T target;
+
     public RpcProxyFactoryBean(Class<T> clz, RpcClient rpcClient) {
         this.clz = clz;
         this.rpcClient = rpcClient;
+        this.target = RpcProxyFactory.build(clz, rpcClient);
     }
 
     @Override
     public T getObject() throws Exception {
-        return RpcProxyFactory.build(clz, rpcClient);
+        return target;
     }
 
     @Override
