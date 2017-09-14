@@ -37,13 +37,10 @@ public class RpcProxyFactoryBean<T> implements FactoryBean<T> {
 
     private final Class<T> clz;
 
-    private final RpcClient rpcClient;
-
     private final T target;
 
     public RpcProxyFactoryBean(Class<T> clz, RpcClient rpcClient) {
         this.clz = clz;
-        this.rpcClient = rpcClient;
         this.target = RpcProxyFactory.build(clz, rpcClient);
     }
 
