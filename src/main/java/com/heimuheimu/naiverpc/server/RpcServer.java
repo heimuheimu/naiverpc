@@ -155,7 +155,7 @@ public class RpcServer implements Closeable {
             state = BeanStatusEnum.NORMAL;
             try {
                 rpcServerTask = new RpcServerTask();
-                rpcServerTask.setName("[RpcServerTask]:" + port);
+                rpcServerTask.setName("naiverpc-server-" + port);
                 rpcServerTask.start();
                 RPC_CONNECTION_LOG.info("RpcServer has been initialized. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
                         (System.currentTimeMillis() - startTime), port, socketConfiguration);

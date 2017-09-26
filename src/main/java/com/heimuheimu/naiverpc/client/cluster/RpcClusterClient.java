@@ -440,7 +440,7 @@ public class RpcClusterClient implements RpcClient {
                         }
 
                     };
-                    rescueThread.setName("RpcClusterClient rescue task");
+                    rescueThread.setName("naiverpc-cluster-client-rescue-task");
                     rescueThread.setDaemon(true);
                     rescueThread.start();
                     isRescueTaskRunning = true;

@@ -39,7 +39,7 @@ class NamedThreadFactory implements ThreadFactory {
     @Override
     public Thread newThread(Runnable r) {
         Thread t = new Thread(r);
-        t.setName("naiverpc-broadcast-" + threadNumber.getAndIncrement());
+        t.setName("naiverpc-broadcast-client-" + threadNumber.getAndIncrement());
         if (t.isDaemon())
             t.setDaemon(false);
         if (t.getPriority() != Thread.NORM_PRIORITY)

@@ -420,7 +420,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
                         }
 
                     };
-                    rescueThread.setName("AutoReconnectRpcBroadcastClient rescue task");
+                    rescueThread.setName("naiverpc-broadcast-client-rescue-task");
                     rescueThread.setDaemon(true);
                     rescueThread.start();
                     isRescueTaskRunning = true;

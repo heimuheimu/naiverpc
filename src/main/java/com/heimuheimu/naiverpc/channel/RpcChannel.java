@@ -199,11 +199,11 @@ public class RpcChannel implements Closeable {
                         SocketConfiguration config = SocketBuilder.getConfig(socket);
                         String socketAddress = host + "/" + socket.getLocalPort();
                         writeTask = new WriteTask(config.getSendBufferSize());
-                        writeTask.setName("[Write] " + socketAddress);
+                        writeTask.setName("naiverpc-channel-write-" + socketAddress);
                         writeTask.start();
 
                         ReadTask readTask = new ReadTask();
-                        readTask.setName("[Read] " + socketAddress);
+                        readTask.setName("naiverpc-channel-read-" + socketAddress);
                         readTask.start();
                         RPC_CONNECTION_LOG.info("RpcChannel has been initialized. Cost: {}ms. Host: `{}`. Local port: `{}`. Heartbeat period: `{}`. Config: `{}`.",
                                 (System.currentTimeMillis() - startTime), host, socket.getLocalPort(), heartbeatPeriod, config);
