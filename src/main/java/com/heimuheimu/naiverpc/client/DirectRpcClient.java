@@ -62,6 +62,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DirectRpcClient implements RpcClient {
 
+    private static final Logger RPC_CONNECTION_LOG = LoggerFactory.getLogger("NAIVERPC_CONNECTION_LOG");
+
     private static final Logger LOG = LoggerFactory.getLogger(DirectRpcClient.class);
 
     /**
@@ -314,7 +316,7 @@ public class DirectRpcClient implements RpcClient {
                 lastTimeoutExceptionTime = System.currentTimeMillis();
                 //如果连续超时异常出现次数大于 50 次，认为当前连接出现异常，关闭当前连接
                 if (continuousTimeoutExceptionTimes > 50) {
-                    LOG.error("DirectRpcClient need to be closed due to: `Too many timeout exceptions[{}]`. Host: `{}`.",
+                    RPC_CONNECTION_LOG.error("DirectRpcClient need to be closed due to: `Too many timeout exceptions[{}]`. Host: `{}`.",
                             continuousTimeoutExceptionTimes, host);
                     close();
                 }
