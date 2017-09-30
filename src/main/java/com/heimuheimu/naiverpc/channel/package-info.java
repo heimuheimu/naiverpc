@@ -22,26 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.channel;
-
-import com.heimuheimu.naiverpc.packet.RpcPacket;
-
 /**
- * {@link RpcChannel} 事件监听器骨架类，可防止 {@link RpcChannelListener} 在后续版本增加监听事件时，带来的编译错误。
- *
- * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
+ * 提供实现 RPC 服务调用方与 RPC 服务提供方进行数据通信的类。
  *
  * @author heimuheimu
  */
-public abstract class RpcChannelListenerSkeleton implements RpcChannelListener {
-
-    @Override
-    public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
-        //do nothing
-    }
-
-    @Override
-    public void onClosed(RpcChannel channel) {
-        //do nothing
-    }
-}
+package com.heimuheimu.naiverpc.channel;

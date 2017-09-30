@@ -27,10 +27,11 @@ package com.heimuheimu.naiverpc.channel;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 
 /**
- * RPC 数据包交互管道事件监听器
+ * {@link RpcChannel} 事件监听器，可监听 RPC 数据接收事件、RPC 数据通信管道关闭事件。
+ *
  * <p>
- *     <b>注意：</b>当需要实现 RPC 数据包交互管道事件监听器时，应优先考虑继承 {@link RpcChannelListenerSkeleton} 抽象类进行实现，
- *     防止 {@link RpcChannelListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ *     <strong>说明：</strong>监听器的实现类必须是线程安全的。应优先考虑继承 {@link RpcChannelListenerSkeleton} 骨架类进行实现，
+ *     防止 {@link RpcChannelListener} 在后续版本增加监听事件时，带来的编译错误。
  * </p>
  *
  * @author heimuheimu
@@ -38,18 +39,17 @@ import com.heimuheimu.naiverpc.packet.RpcPacket;
 public interface RpcChannelListener {
 
     /**
-     * 当管道接受到一个 RPC 数据包时，将会触发此事件
+     * 当管道接收到一个 RPC 数据时，将会触发此事件。
      *
-     * @param channel 接收到该 RPC 数据包的管道
-     * @param packet RPC 数据包
+     * @param channel 接收到 RPC 数据的管道
+     * @param packet 接收到的 RPC 数据
      */
     void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet);
 
     /**
-     * 当管道关闭后，将会触发此事件
+     * 当 RPC 数据通信管道关闭后，将会触发此事件，同一个管道仅触发一次。
      *
-     * @param channel 已关闭的 RPC 数据包交互管道
+     * @param channel 已关闭的 RPC 数据通信管道
      */
     void onClosed(RpcChannel channel);
-
 }
