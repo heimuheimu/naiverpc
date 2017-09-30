@@ -28,7 +28,7 @@ import com.heimuheimu.naiverpc.transcoder.Transcoder;
 import com.heimuheimu.naiverpc.util.ByteUtil;
 
 /**
- * RPC 数据包构造工具类，提供静态方法来构造请求数据包、响应数据包
+ * RPC 数据构造工具类，提供静态方法来构造请求数据、响应数据。
  *
  * @author heimuheimu
  */
@@ -39,11 +39,11 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 构造一个 body 长度为 0 的 RPC 请求数据包并返回
+     * 生成一个 body 长度为 0 的 RPC 请求数据。
      *
-     * @param packetId 请求数据包 ID，在一个通信管道内唯一
-     * @param opcode 数据包所对应的操作代码
-     * @return 请求数据包，body 长度为 0
+     * @param packetId RPC 数据 ID
+     * @param opcode 操作代码
+     * @return RPC 请求数据
      */
     public static RpcPacket buildRequestPacket(long packetId, byte opcode) {
         byte[] header = new byte[24];
@@ -54,13 +54,13 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 构造一个 RPC 请求数据包并返回
+     * 生成一个 RPC 请求数据。
      *
-     * @param packetId 请求数据包 ID，在一个通信管道内唯一
-     * @param opcode 数据包所对应的操作代码
+     * @param packetId RPC 数据 ID
+     * @param opcode 操作代码
      * @param bodyObject body 内容
      * @param transcoder 将 body 内容转换为字节数组的转换器
-     * @return 请求数据包
+     * @return RPC 请求数据
      * @throws Exception 如果在 body 内容转换为字节数组过程中发生错误，将会抛出此异常
      */
     public static RpcPacket buildRequestPacket(long packetId, byte opcode, Object bodyObject, Transcoder transcoder) throws Exception {
@@ -76,12 +76,11 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 构造一个与 RPC 请求数据包对应的响应数据包并返回，该响应数据包的 body 长度为 0
-     * <p>响应数据包的 opcode 与 packet id 与请求数据包一致</p>
+     * 生成一个与 RPC 请求数据对应的响应数据，该响应数据的 body 长度为 0，响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
      *
-     * @param requestRpcPacket RPC 请求数据包
+     * @param requestRpcPacket RPC 请求数据
      * @param status 响应状态码，0 代表成功，错误码则由具体的操作自行定义
-     * @return 响应数据包，body 长度为 0
+     * @return RPC 响应数据
      */
     public static RpcPacket buildResponsePacket(RpcPacket requestRpcPacket, byte status) {
         byte[] header = new byte[24];
@@ -93,14 +92,13 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 构造一个与 RPC 请求数据包对应的响应数据包并返回
-     * <p>响应数据包的 opcode 与 packet id 与请求数据包一致</p>
+     * 生成一个与 RPC 请求数据对应的响应数据，该响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
      *
-     * @param requestRpcPacket RPC 请求数据包
-     * @param status 0 代表成功，错误码则由具体的操作自行定义
+     * @param requestRpcPacket RPC 请求数据
+     * @param status 响应状态码，0 代表成功，错误码则由具体的操作自行定义
      * @param bodyObject body 内容
      * @param transcoder 将 body 内容转换为字节数组的转换器
-     * @return 响应数据包
+     * @return RPC 响应数据
      * @throws Exception 如果在 body 内容转换为字节数组过程中发生错误，将会抛出此异常
      */
     public static RpcPacket buildResponsePacket(RpcPacket requestRpcPacket, byte status, Object bodyObject, Transcoder transcoder) throws Exception {
