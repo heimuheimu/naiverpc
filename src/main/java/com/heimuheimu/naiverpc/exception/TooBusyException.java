@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.exception;
 
 /**
- * RPC 服务提供者过于繁忙，无法执行 RPC 调用请求时，抛出此异常
+ * RPC 服务提供方过于繁忙，无法执行 RPC 调用请求时，抛出此异常
  *
  * @author heimuheimu
  */

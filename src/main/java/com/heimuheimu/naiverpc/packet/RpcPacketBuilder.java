@@ -28,7 +28,7 @@ import com.heimuheimu.naiverpc.transcoder.Transcoder;
 import com.heimuheimu.naiverpc.util.ByteUtil;
 
 /**
- * RPC 数据生成工具类，提供静态方法来生成请求数据、响应数据。
+ * RPC 数据创建工具类，提供静态方法来创建请求数据、响应数据。
  *
  * @author heimuheimu
  */
@@ -39,7 +39,7 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 生成一个 body 长度为 0 的 RPC 请求数据。
+     * 创建一个 body 长度为 0 的 RPC 请求数据。
      *
      * @param packetId RPC 数据 ID
      * @param opcode 操作代码
@@ -54,7 +54,7 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 生成一个 RPC 请求数据。
+     * 创建一个 RPC 请求数据。
      *
      * @param packetId RPC 数据 ID
      * @param opcode 操作代码
@@ -76,7 +76,7 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 生成一个与 RPC 请求数据对应的响应数据，该响应数据的 body 长度为 0，响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
+     * 创建一个与 RPC 请求数据对应的响应数据，该响应数据的 body 长度为 0，响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
      *
      * @param requestRpcPacket RPC 请求数据
      * @param status 响应状态码，0 代表成功，错误码则由具体的操作自行定义
@@ -92,7 +92,7 @@ public class RpcPacketBuilder {
     }
 
     /**
-     * 生成一个与 RPC 请求数据对应的响应数据，该响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
+     * 创建一个与 RPC 请求数据对应的响应数据，该响应数据的操作代码、 RPC 数据 ID 与 RPC 请求数据一致。
      *
      * @param requestRpcPacket RPC 请求数据
      * @param status 响应状态码，0 代表成功，错误码则由具体的操作自行定义

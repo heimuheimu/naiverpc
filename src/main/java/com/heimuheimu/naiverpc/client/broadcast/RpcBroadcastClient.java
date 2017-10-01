@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
- * 广播 RPC 服务调用客户端，连接多台相同功能的 RPC 服务提供者，每个 RPC 调用都会同时发送至全部（多台） RPC 服务提供者，并返回每个服务的执行结果
+ * 广播 RPC 服务调用客户端，连接多台相同功能的 RPC 服务提供方，每个 RPC 调用都会同时发送至全部（多台） RPC 服务提供方，并返回每个服务的执行结果
  * <p>注意：实现类必须保证是线程安全的</p>
  *
  * @author heimuheimu

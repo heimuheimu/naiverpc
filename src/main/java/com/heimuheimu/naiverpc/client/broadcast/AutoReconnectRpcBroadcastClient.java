@@ -25,7 +25,6 @@
 package com.heimuheimu.naiverpc.client.broadcast;
 
 import com.heimuheimu.naiverpc.client.DirectRpcClient;
-import com.heimuheimu.naiverpc.client.RpcClient;
 import com.heimuheimu.naiverpc.client.RpcClientListener;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientThreadPoolMonitorFactory;
@@ -40,7 +39,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * 广播 RPC 服务调用客户端实现类，当与 RPC 服务提供者断开连接时，当前实现具备自动重连功能（每 5 秒进行一次重连尝试）。
+ * 广播 RPC 服务调用客户端实现类，当与 RPC 服务提供方断开连接时，当前实现具备自动重连功能（每 5 秒进行一次重连尝试）。
  *
  * @author heimuheimu
  * @ThreadSafe
@@ -118,7 +117,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
      *     如果某个 RPC 服务调用客户端不可用，该客户端在列表中的值为 {@code null}
      * </p>
      */
-    private final CopyOnWriteArrayList<RpcClient> clientList = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<DirectRpcClient> clientList = new CopyOnWriteArrayList<>();
 
     /**
      * 构造一个广播 RPC 服务调用客户端
@@ -252,7 +251,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
         for (String host : hosts) {
             Integer index = hostIndexMap.get(host);
             if (index != null) {
-                RpcClient client = getRpcClient(index);
+                DirectRpcClient client = getRpcClient(index);
                 if (client != null) {
                     try {
                         Future<BroadcastResponse> future = executorService.submit(new RpcExecuteTask(client, method, args, timeout));
@@ -311,21 +310,17 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
         if (state != BeanStatusEnum.CLOSED) {
             state = BeanStatusEnum.CLOSED;
             executorService.shutdown();
-            for (RpcClient rpcClient : clientList) {
+            for (DirectRpcClient rpcClient : clientList) {
                 if (rpcClient != null) {
-                    try {
-                        rpcClient.close();
-                    } catch (Exception e) {
-                        LOG.error("Close `" + rpcClient.getHost() + "` failed. Hosts: `" + Arrays.toString(hosts) + "`.", e);
-                    }
+                    rpcClient.close();
                 }
             }
             RPC_CONNECTION_LOG.info("AutoReconnectRpcBroadcastClient has been closed. Hosts: `{}`.", Arrays.toString(hosts));
         }
     }
 
-    private RpcClient getRpcClient(int clientIndex) {
-        RpcClient client = clientList.get(clientIndex);
+    private DirectRpcClient getRpcClient(int clientIndex) {
+        DirectRpcClient client = clientList.get(clientIndex);
         if (client != null) {
             if (!client.isActive()) {
                 synchronized (removeInactiveRpcClientLock) {
@@ -431,7 +426,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
 
     private static class RpcExecuteTask implements Callable<BroadcastResponse> {
 
-        private final RpcClient rpcClient;
+        private final DirectRpcClient rpcClient;
 
         private final Method method;
 
@@ -439,7 +434,7 @@ public class AutoReconnectRpcBroadcastClient implements RpcBroadcastClient {
 
         private final long timeout;
 
-        private RpcExecuteTask(RpcClient rpcClient, Method method, Object[] args, long timeout) {
+        private RpcExecuteTask(DirectRpcClient rpcClient, Method method, Object[] args, long timeout) {
             this.rpcClient = rpcClient;
             this.method = method;
             this.args = args;

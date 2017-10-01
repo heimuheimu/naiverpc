@@ -55,10 +55,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * RPC 服务调用直连客户端
- * <p>当前实现是线程安全的</p>
+ *
+ * <p><strong>说明：</strong>{@code DirectRpcClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public class DirectRpcClient implements RpcClient {
 
@@ -92,7 +92,7 @@ public class DirectRpcClient implements RpcClient {
     private final int timeout;
 
     /**
-     * RPC 服务调用者 与 RPC 服务提供者进行数据交互的管道
+     * RPC 服务调用方 与 RPC 服务提供方进行数据交互的管道
      */
     private final RpcChannel rpcChannel;
 
@@ -379,12 +379,29 @@ public class DirectRpcClient implements RpcClient {
         rpcChannel.close();
     }
 
-    @Override
+    /**
+     * 判断 RPC 服务提供方是否已发送下线请求
+     *
+     * @return RPC 服务提供方是否已发送下线请求
+     */
+    public boolean isOffline() {
+        return rpcChannel.isOffline();
+    }
+
+    /**
+     * 判断当前 RPC 服务调用客户端是否可用
+     *
+     * @return 当前 RPC 服务调用客户端是否可用
+     */
     public boolean isActive() {
         return rpcChannel.isActive();
     }
 
-    @Override
+    /**
+     * 获得 RPC 服务提供方的远程主机地址
+     *
+     * @return RPC 服务提供方的远程主机地址
+     */
     public String getHost() {
         return host;
     }

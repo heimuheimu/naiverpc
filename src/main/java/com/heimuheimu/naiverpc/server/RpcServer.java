@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * RPC 服务提供者，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
+ * RPC 服务提供方，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
  *
  * @author heimuheimu
  * @ThreadSafe
@@ -89,14 +89,14 @@ public class RpcServer implements Closeable {
     private RpcServerTask rpcServerTask;
 
     /**
-     * 构造一个 RPC 服务提供者，监听端口为 4182，用于执行 RPC 服务调用请求的线程池最大数量为 200， 最小压缩字节数为 64 KB
+     * 构造一个 RPC 服务提供方，监听端口为 4182，用于执行 RPC 服务调用请求的线程池最大数量为 200， 最小压缩字节数为 64 KB
      */
     public RpcServer() {
         this(4182, null, 200, 64 * 1024, null);
     }
 
     /**
-     * 构造一个 RPC 服务提供者
+     * 构造一个 RPC 服务提供方
      *
      * @param port 监听端口
      * @param socketConfiguration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
@@ -123,7 +123,7 @@ public class RpcServer implements Closeable {
     }
 
     /**
-     * 执行下线操作，当前 RPC 服务提供者不再接受新的 RPC 客户端连接请求，并给已建立的客户端发送离线消息，
+     * 执行下线操作，当前 RPC 服务提供方不再接受新的 RPC 客户端连接请求，并给已建立的客户端发送离线消息，
      * 收到离线消息的客户端将不再发送新的消息请求，并在 1 分钟后关闭。
      * <p>该方法通常在应用关闭前调用，正在执行中的请求不会因为 RPC 客户端突然关闭导致失败</p>
      */
@@ -147,7 +147,7 @@ public class RpcServer implements Closeable {
     }
 
     /**
-     * 执行 RPC 服务提供者初始化操作，仅在初始化完成后，才能提供服务
+     * 执行 RPC 服务提供方初始化操作，仅在初始化完成后，才能提供服务
      */
     public synchronized void init() {
         if (state == BeanStatusEnum.UNINITIALIZED) {
@@ -202,7 +202,7 @@ public class RpcServer implements Closeable {
                 try {
                     Socket socket = serverSocket.accept();
                     SocketBuilder.setConfig(socket, socketConfiguration);
-                    RpcChannel rpcChannel = new RpcChannel(socket, -1, rpcChannelListener);
+                    RpcChannel rpcChannel = new RpcChannel(socket, rpcChannelListener);
                     rpcChannel.init();
                     if (rpcChannel.isActive()) {
                         activeRpcChannelList.add(rpcChannel);

@@ -298,7 +298,7 @@ public class RpcChannel implements Closeable {
     /**
      * 判断是否已接收到 RPC 服务提供方发送的下线操作请求。
      *
-     * <p><strong>说明：</strong>该方法由 RPC 服务调用方调用，RPC 服务提供方调用此方法将永远返回 {@code true}。该方法不会抛出任何异常。</p>
+     * <p><strong>说明：</strong>该方法由 RPC 服务调用方调用，RPC 服务提供方调用此方法将永远返回 {@code false}。该方法不会抛出任何异常。</p>
      *
      * @return 是否已接收到 RPC 服务提供方发送的下线操作请求
      */

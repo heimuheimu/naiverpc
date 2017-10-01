@@ -48,7 +48,7 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
     private ApplicationContext applicationContext;
 
     /**
-     * RPC 服务提供者，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
+     * RPC 服务提供方，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
      */
     private final RpcServer rpcServer;
 

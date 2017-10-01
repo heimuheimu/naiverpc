@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
- * RPC 服务调用集群客户端，连接多台相同功能的 RPC 服务提供者
+ * RPC 服务调用集群客户端，连接多台相同功能的 RPC 服务提供方
  *
  * @author heimuheimu
  * @ThreadSafe
@@ -78,12 +78,12 @@ public class RpcClusterClient implements RpcClient {
      *     如果某个 RPC 服务调用客户端不可用，该客户端在列表中的值为 {@code null}
      * </p>
      */
-    private final CopyOnWriteArrayList<RpcClient> clientList = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<DirectRpcClient> clientList = new CopyOnWriteArrayList<>();
 
     /**
      * 当前可用的 RPC 服务调用客户端列表
      */
-    private final CopyOnWriteArrayList<RpcClient> aliveClientList = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<DirectRpcClient> aliveClientList = new CopyOnWriteArrayList<>();
 
     /**
      * 创建 RPC 服务调用客户端所使用的 Socket 配置信息
@@ -236,7 +236,7 @@ public class RpcClusterClient implements RpcClient {
 
     private Object execute(Method method, Object[] args, long timeout, int tooBusyRetryTimes) throws IllegalStateException, TimeoutException, TooBusyException, RpcException {
         if (state == BeanStatusEnum.NORMAL) {
-            RpcClient client = getClient();
+            DirectRpcClient client = getClient();
             if (client != null) {
                 LOG.debug("Choose RpcClient success. Host: `{}`. Hosts: `{}`", client.getHost(), hosts);
                 try {
@@ -266,20 +266,10 @@ public class RpcClusterClient implements RpcClient {
     }
 
     @Override
-    public boolean isActive() {
-        return !aliveClientList.isEmpty();
-    }
-
-    @Override
-    public String getHost() {
-        return Arrays.toString(hosts);
-    }
-
-    @Override
     public synchronized void close() {
         if (state != BeanStatusEnum.CLOSED) {
             state = BeanStatusEnum.CLOSED;
-            for (RpcClient rpcClient : aliveClientList) {
+            for (DirectRpcClient rpcClient : aliveClientList) {
                 try {
                     rpcClient.close();
                 } catch (Exception e) {
@@ -315,9 +305,9 @@ public class RpcClusterClient implements RpcClient {
         }
     }
 
-    private RpcClient getClient() {
+    private DirectRpcClient getClient() {
         int clientIndex = (int) (Math.abs(count.incrementAndGet()) % hosts.length);
-        RpcClient client = clientList.get(clientIndex);
+        DirectRpcClient client = clientList.get(clientIndex);
         if (client != null) {
             if (!client.isActive()) {
                 boolean isRemoveSuccess= aliveClientList.remove(client);

@@ -66,20 +66,4 @@ public interface RpcClient extends Closeable {
      * @throws RpcException 执行过程中遇到错误，将抛出此异常
      */
     Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, TooBusyException, RpcException;
-
-    /**
-     * 判断当前客户端是否处于可用状态
-     *
-     * @return 当前客户端是否处于可用状态
-     */
-    boolean isActive();
-
-    /**
-     * 获得当前客户端所连的 RPC 服务提供者主机地址
-     * <p>注意：客户端可能支持多 RPC 服务提供者主机地址，输出格式由实现类自行定义</p>
-     *
-     * @return 当前客户端所连的 RPC 服务提供者主机地址
-     */
-    String getHost();
-
 }
