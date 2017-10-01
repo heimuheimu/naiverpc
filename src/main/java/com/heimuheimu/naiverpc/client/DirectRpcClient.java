@@ -35,6 +35,7 @@ import com.heimuheimu.naiverpc.exception.TooBusyException;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientCompressionMonitorFactory;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientExecutionMonitorFactory;
+import com.heimuheimu.naiverpc.net.BuildSocketException;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 import com.heimuheimu.naiverpc.packet.RpcPacketBuilder;
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -54,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * RPC 服务调用直连客户端
+ * RPC 服务调用方使用的直连客户端，通过 {@link #execute(Method, Object[])} 方法远程调用 RPC 服务提供方提供的服务。
  *
  * <p><strong>说明：</strong>{@code DirectRpcClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
@@ -122,18 +124,18 @@ public class DirectRpcClient implements RpcClient {
     private volatile long lastTimeoutExceptionTime = 0;
 
     /**
-     * 构造一个 RPC 服务调用直连客户端
-     * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒</p>
+     * 构造一个 RPC 服务调用方使用的直连客户端，RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒。
+     *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
-     * @throws RuntimeException 如果创建 {@link RpcChannel} 过程中发生错误，将会抛出此异常
+     * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
-    public DirectRpcClient(String host) throws RuntimeException {
+    public DirectRpcClient(String host) throws IllegalArgumentException, BuildSocketException {
         this(host, null, 5000, 64 * 1024, 30, null);
     }
 
     /**
-     * 构造一个 RPC 服务调用直连客户端
+     * 构造一个 RPC 服务调用方使用的直连客户端
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param configuration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
@@ -144,11 +146,10 @@ public class DirectRpcClient implements RpcClient {
      * @throws IllegalArgumentException 如果 timeout 小于等于0
      * @throws IllegalArgumentException 如果 compressionThreshold 小于等于0
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
-     * @throws RuntimeException 如果创建 {@link RpcChannel} 过程中发生错误，将会抛出此异常
+     * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
     public DirectRpcClient(String host, SocketConfiguration configuration, int timeout, int compressionThreshold,
-                           int heartbeatPeriod, RpcClientListener clientListener)
-        throws RuntimeException {
+        int heartbeatPeriod, RpcClientListener clientListener) throws IllegalArgumentException, BuildSocketException {
         if (timeout <= 0) {
             LOG.error("Create DirectRpcClient failed. Timeout could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
                     + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold + "`. ClientListener: `"

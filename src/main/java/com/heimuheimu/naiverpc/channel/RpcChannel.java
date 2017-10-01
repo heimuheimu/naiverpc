@@ -30,6 +30,7 @@ import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientSocketMonitorFactory;
 import com.heimuheimu.naiverpc.monitor.server.RpcServerSocketMonitorFactory;
+import com.heimuheimu.naiverpc.net.BuildSocketException;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
@@ -157,10 +158,11 @@ public class RpcChannel implements Closeable {
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内当前管道如果没有任何数据通信，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
      * @param rpcChannelListener RPC 数据通信管道事件监听器
      * @throws IllegalArgumentException 如果 RPC 服务提供方主机地址不符合规则，将会抛出此异常
-     * @throws RuntimeException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
+     * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      * @see #init()
      */
-    public RpcChannel(String host, SocketConfiguration configuration, int heartbeatPeriod, RpcChannelListener rpcChannelListener) throws RuntimeException {
+    public RpcChannel(String host, SocketConfiguration configuration, int heartbeatPeriod, RpcChannelListener rpcChannelListener)
+            throws IllegalArgumentException, BuildSocketException {
         this.host = host;
         this.socket = SocketBuilder.create(host, configuration);
         this.heartbeatPeriod = heartbeatPeriod;
@@ -174,9 +176,9 @@ public class RpcChannel implements Closeable {
      *
      * <p><b>注意：</b>管道必须执行 {@link #init()} 方法，完成初始化后才可正常使用。</p>
      *
-     * @param socket 与 RPC 服务调用方建立的 Socket 连接，不允许为 {@code null}
+     * @param socket 与 RPC 服务调用方建立的 {@code Socket} 连接，不允许为 {@code null}
      * @param rpcChannelListener RPC 数据通信管道事件监听器，允许为 {@code null}
-     * @throws NullPointerException 如果 Socket 连接为 {@code null}，将会抛出此异常
+     * @throws NullPointerException 如果 {@code Socket} 连接为 {@code null}，将会抛出此异常
      * @see #init()
      */
     public RpcChannel(Socket socket, RpcChannelListener rpcChannelListener) throws NullPointerException {

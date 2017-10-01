@@ -48,7 +48,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * RPC 服务提供方，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public class RpcServer implements Closeable {
 
