@@ -28,7 +28,7 @@ import com.heimuheimu.naiverpc.transcoder.Transcoder;
 import com.heimuheimu.naiverpc.util.ByteUtil;
 
 /**
- * RPC 数据构造工具类，提供静态方法来构造请求数据、响应数据。
+ * RPC 数据生成工具类，提供静态方法来生成请求数据、响应数据。
  *
  * @author heimuheimu
  */
