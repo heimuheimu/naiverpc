@@ -57,6 +57,11 @@ import java.util.concurrent.TimeUnit;
  *     管道是否可以进行数据通信可通过 {@link #isActive()} 方法进行判断。当管道不再使用时，应调用 {@link #close()} 方法进行资源释放。
  * </p>
  *
+ * <h3>监听器</h3>
+ * <blockquote>
+ * 当管道接收到 RPC 数据或管道被关闭时，均会触发 {@link RpcChannelListener} 相应的事件进行通知。
+ * </blockquote>
+ *
  * <h3>数据监控</h3>
  * <blockquote>
  * 可通过 {@link RpcClientSocketMonitorFactory} 获取 RPC 服务调用方 Socket 通信监控数据，
