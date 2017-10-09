@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  * 可通过 {@link RpcServerSocketMonitorFactory} 获取 RPC 服务提供方 Socket 通信监控数据。
  * </blockquote>
  *
- * <h3>连接信息日志配置</h3>
+ * <h3>连接信息日志 Log4j 配置</h3>
  * <strong>注意：</strong> <code>${log.output.directory}</code> 为占位替换符，请自行定义。
  * <blockquote>
  * <pre>
