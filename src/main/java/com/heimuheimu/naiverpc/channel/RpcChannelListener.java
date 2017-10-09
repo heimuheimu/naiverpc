@@ -31,7 +31,7 @@ import com.heimuheimu.naiverpc.packet.RpcPacket;
  *
  * <p>
  *     <strong>说明：</strong>监听器的实现类必须是线程安全的。应优先考虑继承 {@link RpcChannelListenerSkeleton} 骨架类进行实现，
- *     防止 {@link RpcChannelListener} 在后续版本增加监听事件时，带来的编译错误。
+ *     防止 {@code RpcChannelListener} 在后续版本增加监听事件时，带来的编译错误。
  * </p>
  *
  * @author heimuheimu
