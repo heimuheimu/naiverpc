@@ -27,7 +27,7 @@ package com.heimuheimu.naiverpc.channel;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
 
 /**
- * {@link RpcChannel} 事件监听器，可监听 RPC 数据接收事件、RPC 数据通信管道关闭事件。
+ * {@link RpcChannel} 事件监听器，可监听 RPC 数据接收事件，以及 {@code RpcChannel} 关闭事件。
  *
  * <p>
  *     <strong>说明：</strong>监听器的实现类必须是线程安全的。应优先考虑继承 {@link RpcChannelListenerSkeleton} 骨架类进行实现，
@@ -40,6 +40,9 @@ public interface RpcChannelListener {
 
     /**
      * 当管道接收到一个 RPC 数据时，将会触发此事件。
+     * <p>
+     *   <strong>注意：</strong>心跳检测数据和下线请求数据不会触发此事件。
+     * </p>
      *
      * @param channel 接收到 RPC 数据的管道
      * @param packet 接收到的 RPC 数据

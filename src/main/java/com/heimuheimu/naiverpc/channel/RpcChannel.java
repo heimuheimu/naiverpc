@@ -161,7 +161,7 @@ public class RpcChannel implements Closeable {
      * @param host RPC 服务提供方主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param configuration {@link Socket} 配置信息，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内当前管道如果没有任何数据通信，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
-     * @param rpcChannelListener RPC 数据通信管道事件监听器
+     * @param rpcChannelListener {@code RpcChannel} 事件监听器
      * @throws IllegalArgumentException 如果 RPC 服务提供方主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      * @see #init()
