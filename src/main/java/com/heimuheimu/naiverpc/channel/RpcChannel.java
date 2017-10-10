@@ -64,7 +64,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <h3>数据监控</h3>
  * <blockquote>
- * 可通过 {@link RpcClientSocketMonitorFactory} 获取 RPC 服务调用方 Socket 通信监控数据，
+ * 可通过 {@link RpcClientSocketMonitorFactory} 获取 RPC 服务调用方 Socket 通信监控数据。<br>
  * 可通过 {@link RpcServerSocketMonitorFactory} 获取 RPC 服务提供方 Socket 通信监控数据。
  * </blockquote>
  *
