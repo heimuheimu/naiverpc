@@ -22,9 +22,36 @@
  * SOFTWARE.
  */
 
+package com.heimuheimu.naiverpc.client.broadcast;
+
+import java.lang.reflect.Method;
+
 /**
- * 提供直连、集群、广播三种模式的 RPC 调用客户端，供 RPC 服务调用方选择使用。
+ * {@link RpcBroadcastClient} 事件监听器骨架类，可防止 {@link RpcBroadcastClientListener} 在后续版本增加监听事件时，带来的编译错误。
+ *
+ * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */
-package com.heimuheimu.naiverpc.client;
+public abstract class RpcBroadcastClientListenerSkeleton implements RpcBroadcastClientListener {
+
+    @Override
+    public void onCreated(String host) {
+        //do nothing
+    }
+
+    @Override
+    public void onRecovered(String host) {
+        //do nothing
+    }
+
+    @Override
+    public void onClosed(String host, boolean isOffline) {
+        //do nothing
+    }
+
+    @Override
+    public void onFailedExecuted(String host, Method method, Object[] args) {
+        //do nothing
+    }
+}

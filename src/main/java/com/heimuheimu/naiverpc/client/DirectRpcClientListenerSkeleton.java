@@ -27,56 +27,56 @@ package com.heimuheimu.naiverpc.client;
 import java.lang.reflect.Method;
 
 /**
- * RPC 服务调用客户端监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
- * 可防止 {@link RpcClientListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * {@link DirectRpcClient} 事件监听器骨架类，可防止 {@link DirectRpcClientListener} 在后续版本增加监听事件时，带来的编译错误。
+ *
+ * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */
-public abstract class RpcClientListenerSkeleton implements RpcClientListener {
+public abstract class DirectRpcClientListenerSkeleton implements DirectRpcClientListener {
 
     @Override
-    public void onClassNotFound(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onClassNotFound(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onNoSuchMethod(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onNoSuchMethod(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onIllegalArgument(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onIllegalArgument(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onInvocationTargetError(RpcClient client, Method method, Object[] args, String errorMessage) {
-        //do nothing
+    public void onInvocationTargetError(String host, Method method, Object[] args, String errorMessage) {
+        //do noting
     }
 
     @Override
-    public void onTimeout(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onTimeout(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onError(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onError(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onTooBusy(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onTooBusy(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onClosed(RpcClient client, Method method, Object[] args) {
-        //do nothing
+    public void onClosed(String host, Method method, Object[] args) {
+        //do noting
     }
 
     @Override
-    public void onSlowExecution(RpcClient client, Method method, Object[] args, long executedNanoTime) {
-        //do nothing
+    public void onSlowExecution(String host, Method method, Object[] args, long executedNanoTime) {
+        //do noting
     }
-
 }

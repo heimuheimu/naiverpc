@@ -32,38 +32,40 @@ import java.io.Closeable;
 import java.lang.reflect.Method;
 
 /**
- * RPC 服务调用客户端
- * <p>实现类需保证实现是线程安全的</p>
+ * RPC 服务调用方使用的客户端，通过 {@link #execute(Method, Object[])} 方法远程调用 RPC 服务提供方提供的服务。
+ *
+ * <p>
+ *     <strong>说明：</strong> {@code RpcClient} 的实现类必须是线程安全的。
+ * </p>
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public interface RpcClient extends Closeable {
 
     /**
-     * 执行调用远程服务操作，并返回执行结果，超时时间使用客户端默认的超时时间设置。
+     * 向 RPC 服务提供方发起调用请求，并返回执行结果，超时时间使用 {@code RpcClient} 实现类默认的超时时间设置。
      *
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
      * @return 执行结果
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
-     * @throws TimeoutException 如果执行超时，将抛出此异常
-     * @throws TooBusyException 如果远程服务繁忙，无法执行当前调用请求，将抛出此异常
-     * @throws RpcException 执行过程中遇到错误，将抛出此异常
+     * @throws IllegalStateException 如果 {@code RpcClient} 处于不可服务状态，将抛出此异常
+     * @throws TimeoutException 如果 RPC 调用超时，将抛出此异常
+     * @throws TooBusyException 如果当 RPC 服务提供方过于繁忙，无法执行该调用请求，将抛出此异常
+     * @throws RpcException 如果 RPC 调用过程中遇到错误，将抛出此异常
      */
     Object execute(Method method, Object[] args) throws IllegalStateException, TimeoutException, TooBusyException, RpcException;
 
     /**
-     * 执行调用远程服务操作，并返回执行结果
+     * 向 RPC 服务提供方发起调用请求，并返回执行结果。
      *
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
-     * @param timeout 超时时间，单位为毫秒，如果小于等于 0，则使用客户端默认的超时时间设置
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
+     * @param timeout RPC 调用超时时间，单位为毫秒，不允许小于等于 0
      * @return 执行结果
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
-     * @throws TimeoutException 如果执行超时，将抛出此异常
-     * @throws TooBusyException 如果远程服务繁忙，无法执行当前调用请求，将抛出此异常
-     * @throws RpcException 执行过程中遇到错误，将抛出此异常
+     * @throws IllegalStateException 如果 {@code RpcClient} 处于不可服务状态，将抛出此异常
+     * @throws TimeoutException 如果 RPC 调用超时，将抛出此异常
+     * @throws TooBusyException 如果当 RPC 服务提供方过于繁忙，无法执行该调用请求，将抛出此异常
+     * @throws RpcException 如果 RPC 调用过程中遇到错误，将抛出此异常
      */
     Object execute(Method method, Object[] args, long timeout) throws IllegalStateException, TimeoutException, TooBusyException, RpcException;
 }

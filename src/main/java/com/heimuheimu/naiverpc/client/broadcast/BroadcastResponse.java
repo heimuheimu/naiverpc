@@ -25,10 +25,11 @@
 package com.heimuheimu.naiverpc.client.broadcast;
 
 /**
- * 广播 RPC 调用返回结果
+ * 广播 RPC 调用返回结果。
+ *
+ * <p><strong>说明：</strong>{@code BroadcastResponse} 类是非线程安全的，不允许多个线程使用同一个实例。</p>
  *
  * @author heimuheimu
- * @NotThreadSafe
  */
 public class BroadcastResponse {
 
@@ -38,18 +39,19 @@ public class BroadcastResponse {
     public static final int CODE_SUCCESS = 0;
 
     /**
-     * 状态码：未知 RPC 服务的主机地址，该地址没有在广播 RPC 服务调用客户端中进行定义
+     * 状态码：未知的提供 RPC 服务主机地址
+     *
      * @see RpcBroadcastClient#getHosts()
      */
     public static final int CODE_UNKNOWN_HOST = -1;
 
     /**
-     * 状态码：在 RPC 调用时，RPC 服务不可用，例如：底层 Socket 连接被关闭，并且尚未恢复
+     * 状态码：提供 RPC 服务主机地址不可用
      */
     public static final int CODE_INVALID_HOST = -2;
 
     /**
-     * 状态码：执行错误
+     * 状态码：RPC 调用失败
      */
     public static final int CODE_ERROR = -3;
 
@@ -59,16 +61,16 @@ public class BroadcastResponse {
     private String host = "";
 
     /**
-     * RPC 调用执行状态码
+     * RPC 调用结果状态码
      */
     private int code = CODE_SUCCESS;
 
     /**
      * RPC 调用返回结果，在下列几种情况下，该值将会为 {@code null}
      * <ol>
-     *     <li>RPC 调用执行成功，方法返回类型定义为 {@code void}</li>
-     *     <li>RPC 调用执行成功，方法返回值为 {@code null}</li>
-     *     <li>RPC 调用执行失败</li>
+     *     <li>RPC 调用成功，方法返回类型定义为 {@code void}</li>
+     *     <li>RPC 调用成功，方法返回值为 {@code null}</li>
+     *     <li>RPC 调用失败</li>
      * </ol>
      */
     private Object result = null;
@@ -76,7 +78,7 @@ public class BroadcastResponse {
     /**
      * RPC 调用发生的异常信息，在下列几种情况下，该值将会为 {@code null}
      * <ol>
-     *     <li>RPC 调用执行成功</li>
+     *     <li>RPC 调用成功</li>
      *     <li>RPC 调用失败，并且执行状态码为 {@link #CODE_UNKNOWN_HOST}</li>
      *     <li>RPC 调用失败，并且执行状态码为 {@link #CODE_INVALID_HOST}</li>
      * </ol>
@@ -102,18 +104,18 @@ public class BroadcastResponse {
     }
 
     /**
-     * 获得 RPC 调用执行状态码
+     * 获得 RPC 调用结果状态码
      *
-     * @return RPC 调用执行状态码
+     * @return RPC 调用结果状态码
      */
     public int getCode() {
         return code;
     }
 
     /**
-     * 设置 RPC 调用执行状态码
+     * 设置 RPC 调用结果状态码
      *
-     * @param code RPC 调用执行状态码
+     * @param code RPC 调用结果状态码
      */
     public void setCode(int code) {
         this.code = code;
@@ -122,9 +124,9 @@ public class BroadcastResponse {
     /**
      * 获得 RPC 调用返回结果，在下列几种情况下，该值将会为 {@code null}
      * <ol>
-     *     <li>RPC 调用执行成功，方法返回类型定义为 {@code void}</li>
-     *     <li>RPC 调用执行成功，方法返回值为 {@code null}</li>
-     *     <li>RPC 调用执行失败</li>
+     *     <li>RPC 调用成功，方法返回类型定义为 {@code void}</li>
+     *     <li>RPC 调用成功，方法返回值为 {@code null}</li>
+     *     <li>RPC 调用失败</li>
      * </ol>
      *
      * @return RPC 调用返回结果，可能为 {@code null}
@@ -145,7 +147,7 @@ public class BroadcastResponse {
     /**
      * 获得 RPC 调用发生的异常信息，在下列几种情况下，该值将会为 {@code null}
      * <ol>
-     *     <li>RPC 调用执行成功</li>
+     *     <li>RPC 调用成功</li>
      *     <li>RPC 调用失败，并且执行状态码为 {@link #CODE_UNKNOWN_HOST}</li>
      *     <li>RPC 调用失败，并且执行状态码为 {@link #CODE_INVALID_HOST}</li>
      * </ol>
@@ -166,9 +168,9 @@ public class BroadcastResponse {
     }
 
     /**
-     * 判断广播 RPC 调用是否成功
+     * 判断 RPC 调用是否成功
      *
-     * @return 广播 RPC 调用是否成功
+     * @return RPC 调用是否成功
      */
     public boolean isSuccess() {
         return code == CODE_SUCCESS;

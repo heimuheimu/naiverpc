@@ -24,25 +24,26 @@
 
 package com.heimuheimu.naiverpc.client;
 
-import com.heimuheimu.naiverpc.client.RpcClient;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * RPC 远程调用代理工厂，可以为指定接口生成一个 RPC 远程调用代理实例
+ * RPC 服务提供方通常以接口的形式提供其所支持的服务，{@code RpcProxyFactory} 可为这类接口生成一个代理实现，
+ * 接口的方法执行均通过 {@link RpcClient#execute(Method, Object[])} 来发起 RPC 调用，并返回结果。
+ *
+ * <p><strong>说明：</strong>{@code RpcProxyFactory} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
  */
 public class RpcProxyFactory {
 
     /**
-     * 根据指定接口生成一个 RPC 远程调用代理实例后返回
+     * 根据接口生成一个 RPC 调用代理，接口的方法执行均通过 {@link RpcClient#execute(Method, Object[])} 来发起 RPC 调用，并返回结果。
      *
-     * @param clz 需要生成代理的接口 Class
-     * @param rpcClient RPC 服务调用客户端，该代理通过此客户端进行 RPC 服务调用
-     * @return 指定接口对应的 RPC 远程调用代理实例u
+     * @param clz 需要生成 RPC 调用代理的接口 Class
+     * @param rpcClient RPC 服务调用方使用的客户端
+     * @return RPC 调用代理
      *
      */
     @SuppressWarnings("unchecked")

@@ -25,8 +25,8 @@
 package com.heimuheimu.naiverpc.client.cluster;
 
 import com.heimuheimu.naiverpc.client.DirectRpcClient;
+import com.heimuheimu.naiverpc.client.DirectRpcClientListener;
 import com.heimuheimu.naiverpc.client.RpcClient;
-import com.heimuheimu.naiverpc.client.RpcClientListener;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,10 +44,27 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
- * RPC 服务调用集群客户端，连接多台相同功能的 RPC 服务提供方
+ * RPC 服务调用方使用的集群客户端，RPC 调用请求将根据轮询策略（Round-Robin）调度至相应的 {@link DirectRpcClient} 中执行。
+ *
+ * <p>
+ *     当 {@code RpcClusterClient} 不再使用时，应调用 {@link #close()} 方法进行资源释放。
+ * </p>
+ *
+ * <h3>可用性</h3>
+ * <blockquote>
+ * {@code RpcClusterClient} 中不可用的 {@code DirectRpcClient} 将会被自动移除，并启动恢复线程尝试进行恢复，如果恢复失败，等待下一次恢复的周期为 5 秒。<br>
+ * 刚恢复的 {@code DirectRpcClient} 存在一分钟的保护期，保护期内，该直连客户端的 RPC 调用量以 15 秒为周期逐步增加。
+ * </blockquote>
+ *
+ * <h3>监听器</h3>
+ * <blockquote>
+ * 当 {@code RpcClusterClient} 中的 {@code DirectRpcClient} 被创建、关闭、恢复后，均会触发 {@link RpcClusterClientListener} 相应的事件进行通知。
+ * </blockquote>
+ *
+ * <p><strong>说明：</strong>{@code RpcClusterClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
- * @ThreadSafe
+ * @see DirectRpcClient
  */
 public class RpcClusterClient implements RpcClient {
 
@@ -60,137 +78,165 @@ public class RpcClusterClient implements RpcClient {
     private final String[] hosts;
 
     /**
-     * RPC 服务调用客户端最后一次从不可用状态中恢复的时间戳列表，该列表顺序、大小与 {@link #hosts} 一致
-     * <p>
-     *     如果 RPC 服务调用客户端一直保持可用，在列表中的值为 0
-     * </p>
+     * RPC 服务提供方最后一次从不可用状态中恢复的时间戳列表，该列表顺序、大小与 {@link #hosts} 一致，如果一直保持可用，在列表中的值为 0
      */
     private final AtomicLongArray rescueTimeArray;
 
     /**
-     * 记录已获取 RPC 服务调用客户端的次数，用于做负载均衡
+     * 记录已获取 {@code DirectRpcClient} 的次数，用于做负载均衡
      */
     private final AtomicLong count = new AtomicLong(0);
 
     /**
-     * RPC 服务调用客户端列表，该列表顺序、大小与 {@link #hosts} 一致
-     * <p>
-     *     如果某个 RPC 服务调用客户端不可用，该客户端在列表中的值为 {@code null}
-     * </p>
+     * {@code DirectRpcClient} 列表，该列表顺序、大小与 {@link #hosts} 一致，如果某个 {@code host} 当前不可用，其在列表中的值为 {@code null}
      */
     private final CopyOnWriteArrayList<DirectRpcClient> clientList = new CopyOnWriteArrayList<>();
 
     /**
-     * 当前可用的 RPC 服务调用客户端列表
+     * 当前可用的 {@code DirectRpcClient} 列表
      */
     private final CopyOnWriteArrayList<DirectRpcClient> aliveClientList = new CopyOnWriteArrayList<>();
 
     /**
-     * 创建 RPC 服务调用客户端所使用的 Socket 配置信息
+     * 创建 {@code DirectRpcClient} 使用的 {@link Socket} 配置信息，允许为 {@code null}
      */
     private final SocketConfiguration configuration;
 
     /**
-     * RPC 服务调用默认超时时间，单位：毫秒
+     * 创建 {@code DirectRpcClient} 使用的 RPC 调用超时时间，单位：毫秒，不能小于等于 0
      */
     private final int timeout;
 
     /**
-     * 最小压缩字节数，当 Value 字节数小于或等于该值，不进行压缩，不能小于等于0
+     * 创建 {@code DirectRpcClient} 使用的最小压缩字节数，不能小于等于 0
      */
     private final int compressionThreshold;
 
     /**
-     * 心跳检测时间，单位：秒，在该周期时间内单个 RPC 服务调用客户端使用的数据管道如果没有任何数据交互，将会发送一个心跳请求数据包
+     * 创建 {@code DirectRpcClient} 使用的 RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0
+     */
+    private final int slowExecutionThreshold;
+
+    /**
+     * 创建 {@code DirectRpcClient} 使用的心跳检测时间，单位：秒
      */
     private final int heartbeatPeriod;
 
     /**
-     * RPC 服务调用客户端监听器
+     * 创建 {@code DirectRpcClient} 使用的 {@code DirectRpcClient} 事件监听器，允许为 {@code null}
      */
-    private final RpcClientListener rpcClientListener;
+    private final DirectRpcClientListener directRpcClientListener;
 
     /**
-     * RPC 服务调用集群客户端事件监听器
+     * {@code RpcClusterClient} 事件监听器，允许为 {@code null}
      */
     private final RpcClusterClientListener rpcClusterClientListener;
 
     /**
-     * RPC 服务调用客户端恢复任务是否运行
+     * RPC 服务提供方恢复任务是否运行
      */
     private boolean isRescueTaskRunning = false;
 
     /**
-     * RPC 服务调用客户端恢复任务使用的私有锁
+     * RPC 服务提供方恢复任务使用的私有锁
      */
     private final Object rescueTaskLock = new Object();
 
     /**
-     * 当前 RPC 服务调用集群客户端所处状态
+     * 当前集群客户端所处状态
      */
     private volatile BeanStatusEnum state = BeanStatusEnum.NORMAL;
 
     /**
-     * 构造一个 RPC 服务调用集群客户端
-     * <p>该客户端的 RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒</p>
+     * 构造一个 RPC 服务调用方使用的集群客户端，创建 {@code DirectRpcClient} 时， {@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，
+     * RPC 调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，RPC 执行过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
      *
-     * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
-     * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
-     * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
+     * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182，不允许为 {@code null} 或空数组
+     * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址数组为 {@code null} 或空数组，将会抛出此异常
+     * @throws IllegalStateException 如果所有提供 RPC 服务的主机地址都不可用，将会抛出此异常
+     * @see DirectRpcClient
      */
-    public RpcClusterClient(String[] hosts) throws IllegalArgumentException, IllegalStateException {
-        this(hosts, null, 5000, 64 * 1024, 30, null, null);
+    public RpcClusterClient(String[] hosts, DirectRpcClientListener directRpcClientListener, RpcClusterClientListener rpcClusterClientListener)
+            throws IllegalArgumentException, IllegalStateException {
+        this(hosts, null, 5000, 64 * 1024, 50, 30, directRpcClientListener, rpcClusterClientListener);
     }
 
     /**
-     * 构造一个 RPC 服务调用集群客户端
+     * 构造一个 RPC 服务调用方使用的集群客户端。
      *
-     * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
-     * @param configuration 创建 RPC 服务调用客户端所使用的 Socket 配置信息，允许为 {@code null}
-     * @param timeout RPC 服务调用默认超时时间，单位：毫秒，不能小于等于0
-     * @param compressionThreshold 最小压缩字节数，当 Value 字节数小于或等于该值，不进行压缩，不能小于等于0
-     * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内单个 RPC 服务调用客户端使用的数据管道如果没有任何数据交互，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
-     * @param rpcClientListener RPC 服务调用客户端监听器，允许为 {@code null}
-     * @param rpcClusterClientListener RPC 服务调用集群客户端事件监听器，允许为 {@code null}
-     * @throws IllegalArgumentException 如果 RPC 服务的主机地址数组为 {@code null} 或 空数组
-     * @throws IllegalArgumentException 如果 timeout 小于等于 0
-     * @throws IllegalArgumentException 如果 compressionThreshold 小于等于 0
-     * @throws IllegalStateException  如果在创建过程中所有提供 RPC 服务的主机都不可用
+     * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182，不允许为 {@code null} 或空数组
+     * @param configuration 创建 {@code DirectRpcClient} 使用的 {@link Socket} 配置信息，允许为 {@code null}
+     * @param timeout 创建 {@code DirectRpcClient} 使用的 RPC 调用超时时间，单位：毫秒，不能小于等于 0
+     * @param compressionThreshold 创建 {@code DirectRpcClient} 使用的最小压缩字节数，不能小于等于 0
+     * @param slowExecutionThreshold 🈵️创建 {@code DirectRpcClient} 使用的 RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0
+     * @param heartbeatPeriod 创建 {@code DirectRpcClient} 使用的心跳检测时间，单位：秒
+     * @param directRpcClientListener 创建 {@code DirectRpcClient} 使用的 {@code DirectRpcClient} 事件监听器，允许为 {@code null}
+     * @param rpcClusterClientListener {@code RpcClusterClient} 事件监听器，允许为 {@code null}
+     * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址数组为 {@code null} 或空数组，将会抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 调用超时时间小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果最小压缩字节数小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 执行过慢最小时间小于等于 0，将会抛出此异常
+     * @throws IllegalStateException  如果所有提供 RPC 服务的主机地址都不可用，将会抛出此异常
      */
     public RpcClusterClient(String[] hosts, SocketConfiguration configuration, int timeout, int compressionThreshold,
-                            int heartbeatPeriod, RpcClientListener rpcClientListener, RpcClusterClientListener rpcClusterClientListener)
-            throws IllegalArgumentException, IllegalStateException {
+            int slowExecutionThreshold, int heartbeatPeriod, DirectRpcClientListener directRpcClientListener,
+            RpcClusterClientListener rpcClusterClientListener) throws IllegalArgumentException, IllegalStateException {
         if (hosts == null || hosts.length == 0) {
-            LOG.error("Create RpcClusterClient failed. Hosts could not be empty. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
-            throw new IllegalArgumentException("Create RpcClusterClient failed. Hosts could not be empty. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            LOG.error("Create RpcClusterClient failed: `hosts could not be empty`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed: `hosts could not be empty`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
         }
         if (timeout <= 0) {
-            LOG.error("Create RpcClusterClient failed. Timeout could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
-            throw new IllegalArgumentException("Create RpcClusterClient failed. Timeout could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            LOG.error("Create RpcClusterClient failed: `timeout could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed: `timeout could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
         }
         if (compressionThreshold <= 0) {
-            LOG.error("Create RpcClusterClient failed. CompressionThreshold could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
-            throw new IllegalArgumentException("Create RpcClusterClient failed. CompressionThreshold could not be equal or less than 0. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            LOG.error("Create RpcClusterClient failed: `compressionThreshold could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed: `compressionThreshold could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+        }
+        if (slowExecutionThreshold <= 0) {
+            LOG.error("Create RpcClusterClient failed: `slowExecutionThreshold could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+            throw new IllegalArgumentException("Create RpcClusterClient failed: `slowExecutionThreshold could not be equal or less than 0`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
         }
         this.hosts = hosts;
         this.rescueTimeArray = new AtomicLongArray(hosts.length);
         this.configuration = configuration;
         this.timeout = timeout;
         this.compressionThreshold = compressionThreshold;
+        this.slowExecutionThreshold = slowExecutionThreshold;
         this.heartbeatPeriod = heartbeatPeriod;
-        this.rpcClientListener = rpcClientListener;
+        this.directRpcClientListener = directRpcClientListener;
         this.rpcClusterClientListener = rpcClusterClientListener;
         for (String host : hosts) {
             boolean isSuccess = createRpcClient(-1, host);
@@ -207,7 +253,7 @@ public class RpcClusterClient implements RpcClient {
                 RPC_CONNECTION_LOG.error("Add `{}` to cluster is failed. Hosts: `{}`.", host, Arrays.toString(hosts));
                 if (rpcClusterClientListener != null) {
                     try {
-                        rpcClusterClientListener.onClosed(host);
+                        rpcClusterClientListener.onClosed(host, false);
                     } catch (Exception e) {
                         LOG.error("Call RpcClusterClientListener#onClosed() failed. Host: `" + host + "`. Hosts: `" + Arrays.toString(hosts) + "`.", e);
                     }
@@ -215,12 +261,16 @@ public class RpcClusterClient implements RpcClient {
             }
         }
         if (aliveClientList.isEmpty()) {
-            LOG.error("Create RpcClusterClient failed. There is no available rpc server. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
-            throw new IllegalStateException("Create RpcClusterClient failed. There is no available rpc server. Hosts: `" + Arrays.toString(hosts)
-                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout
-                    + "`. Compression threshold: `" + compressionThreshold + "`. Heartbeat period: `" + heartbeatPeriod + "`.");
+            LOG.error("Create RpcClusterClient failed: `there is no active DirectRpcClient`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
+            throw new IllegalStateException("Create RpcClusterClient failed: `there is no active DirectRpcClient`. Hosts: `" + Arrays.toString(hosts)
+                    + "`. SocketConfiguration: `" + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `"
+                    + heartbeatPeriod + "`. DirectRpcClientListener: `" + directRpcClientListener + "`. RpcClusterClientListener: `"
+                    + rpcClusterClientListener + "`.");
         }
     }
 
@@ -238,29 +288,32 @@ public class RpcClusterClient implements RpcClient {
         if (state == BeanStatusEnum.NORMAL) {
             DirectRpcClient client = getClient();
             if (client != null) {
-                LOG.debug("Choose RpcClient success. Host: `{}`. Hosts: `{}`", client.getHost(), hosts);
+                LOG.debug("Choose DirectRpcClient success. Host: `{}`. Method: `{}`. Arguments: `{}`. Hosts: `{}`.",
+                        client.getHost(), method, args, hosts);
                 try {
                     return client.execute(method, args, timeout);
                 } catch (TooBusyException ex) {
                     if (tooBusyRetryTimes > 0) {
                         --tooBusyRetryTimes;
-                        LOG.error("RpcServer is too busy. Host: `{}`. Left retry times: `{}`. Hosts: `{}`.", client.getHost(), tooBusyRetryTimes, hosts);
+                        LOG.error("RPC execute failed: `too busy, left retry times: {}`. Host: `{}`. Method: `{}`. Arguments: `{}`. Hosts: `{}`.",
+                                tooBusyRetryTimes, client.getHost(), method, args, hosts);
                         return execute(method, args, timeout, tooBusyRetryTimes);
                     } else {
-                        LOG.error("RpcServer is too busy. No more retry. Host: `{}`. Hosts: `{}`.", client.getHost(), hosts);
+                        LOG.error("RPC execute failed: `too busy, no more retry`. Host: `{}`. Method: `{}`. Arguments: `{}`. Hosts: `{}`.",
+                                client.getHost(), method, args, hosts);
                         throw ex;
                     }
                 }
             } else {
-                LOG.error("There is no available RpcClient. Method: `" + method + "`. Arguments: `"
+                LOG.error("RPC execute failed: `there is no active DirectRpcClient`. Method: `" + method + "`. Arguments: `"
                         + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
-                throw new IllegalStateException("There is no available RpcClient. Method: `" + method + "`. Arguments: `"
-                        + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
+                throw new IllegalStateException("RPC execute failed: `there is no active DirectRpcClient`. Method: `" + method
+                        + "`. Arguments: `" + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
             }
         } else {
-            LOG.error("RpcClusterClient has been closed. Method: `" + method + "`. Arguments: `"
+            LOG.error("RPC execute failed: `RpcClusterClient has been closed`. Method: `" + method + "`. Arguments: `"
                     + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
-            throw new IllegalStateException("RpcClusterClient has been closed. Method: `" + method + "`. Arguments: `"
+            throw new IllegalStateException("RPC execute failed: `RpcClusterClient has been closed`. Method: `" + method + "`. Arguments: `"
                     + Arrays.toString(args) + "`. Timeout: `" + timeout + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
         }
     }
@@ -280,12 +333,31 @@ public class RpcClusterClient implements RpcClient {
         }
     }
 
+    @Override
+    public String toString() {
+        return "RpcClusterClient{" +
+                "hosts=" + Arrays.toString(hosts) +
+                ", rescueTimeArray=" + rescueTimeArray +
+                ", count=" + count +
+                ", configuration=" + configuration +
+                ", timeout=" + timeout +
+                ", compressionThreshold=" + compressionThreshold +
+                ", slowExecutionThreshold=" + slowExecutionThreshold +
+                ", heartbeatPeriod=" + heartbeatPeriod +
+                ", directRpcClientListener=" + directRpcClientListener +
+                ", rpcClusterClientListener=" + rpcClusterClientListener +
+                ", isRescueTaskRunning=" + isRescueTaskRunning +
+                ", rescueTaskLock=" + rescueTaskLock +
+                ", state=" + state +
+                '}';
+    }
+
     private boolean createRpcClient(int clientIndex, String host) {
         DirectRpcClient client = null;
         try {
-            client = new DirectRpcClient(host, configuration, timeout, compressionThreshold, heartbeatPeriod, rpcClientListener);
+            client = new DirectRpcClient(host, configuration, timeout, compressionThreshold, slowExecutionThreshold, heartbeatPeriod, directRpcClientListener);
         } catch (Exception e) {
-            LOG.error("Create DirectRpcClient for cluster failed. Host: `" + host + "`. Hosts: `" + Arrays.toString(hosts) + "`.", e);
+            LOG.error("Create DirectRpcClient for RpcClusterClient failed. Host: `" + host + "`. Hosts: `" + Arrays.toString(hosts) + "`.", e);
         }
         if (client != null && client.isActive()) {
             aliveClientList.add(client);
@@ -310,12 +382,12 @@ public class RpcClusterClient implements RpcClient {
         DirectRpcClient client = clientList.get(clientIndex);
         if (client != null) {
             if (!client.isActive()) {
-                boolean isRemoveSuccess= aliveClientList.remove(client);
+                boolean isRemoveSuccess = aliveClientList.remove(client);
                 if (isRemoveSuccess) {
                     clientList.set(clientIndex, null);
                     if (rpcClusterClientListener != null) {
                         try {
-                            rpcClusterClientListener.onClosed(client.getHost());
+                            rpcClusterClientListener.onClosed(client.getHost(), client.isOffline());
                         } catch (Exception e) {
                             LOG.error("Call RpcClusterClientListener#onClosed() failed. Host: `" + client.getHost() + "`. Hosts: `" + Arrays.toString(hosts) + "`.", e);
                         }
@@ -324,7 +396,7 @@ public class RpcClusterClient implements RpcClient {
                 }
                 client = null;
             } else if (isSkipThisRound(clientIndex)) {
-                LOG.debug("RpcClient is skip this round: `{}`. Client index: `{}`. Hosts: `{}`.", client.getHost(), clientIndex, Arrays.toString(hosts));
+                LOG.debug("DirectRpcClient skip this round: `{}`. Client index: `{}`. Hosts: `{}`.", client.getHost(), clientIndex, Arrays.toString(hosts));
                 client = null;
             }
         }
@@ -335,12 +407,10 @@ public class RpcClusterClient implements RpcClient {
                 int aliveClientIndex = (new Random()).nextInt(aliveClientSize);
                 try {
                     client = aliveClientList.get(aliveClientIndex);
-                } catch (IndexOutOfBoundsException e) {
-                    LOG.error("No available RpcClient due to IndexOutOfBoundsException. Index: `" + aliveClientIndex + "`. Size: `"
+                } catch (IndexOutOfBoundsException e) { //should not happen
+                    LOG.error("No active DirectRpcClient due to IndexOutOfBoundsException. Index: `" + aliveClientIndex + "`. Size: `"
                             + aliveClientList.size() + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
                 }
-            } else {
-                LOG.error("There is no available RpcClient. Hosts: `" + Arrays.toString(hosts) + "`.");
             }
 
             if (aliveClientList.size() < hosts.length) {

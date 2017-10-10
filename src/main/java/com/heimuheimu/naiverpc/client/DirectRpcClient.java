@@ -58,6 +58,21 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * RPC 服务调用方使用的直连客户端，通过 {@link #execute(Method, Object[])} 方法远程调用 RPC 服务提供方提供的服务。
  *
+ * <p>
+ *     当 {@code DirectRpcClient} 不再使用时，应调用 {@link #close()} 方法进行资源释放。
+ * </p>
+ *
+ * <h3>监听器</h3>
+ * <blockquote>
+ * 当 RPC 调用出现异常、超时、执行过慢、RPC 服务提供方繁忙、{@code DirectRpcClient} 已关闭等错误时，均会触发 {@link DirectRpcClientListener} 相应的事件进行通知。
+ * </blockquote>
+ *
+ * <h3>数据监控</h3>
+ * <blockquote>
+ * 可通过 {@link RpcClientCompressionMonitorFactory} 获取 RPC 服务调用方压缩信息监控数据。<br>
+ * 可通过 {@link RpcClientExecutionMonitorFactory} 获取单个 RPC 服务提供方的 RPC 调用执行信息监控数据。
+ * </blockquote>
+ *
  * <p><strong>说明：</strong>{@code DirectRpcClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
@@ -69,17 +84,17 @@ public class DirectRpcClient implements RpcClient {
     private static final Logger LOG = LoggerFactory.getLogger(DirectRpcClient.class);
 
     /**
-     * RPC 数据包 ID 生成器
+     * RPC 数据 ID 生成器
      */
     private final AtomicLong packetIdGenerator = new AtomicLong();
 
     /**
-     * Key 为 RPC 请求数据包 ID，Value 为该请求数据包对应的 {@link CountDownLatch} 实例
+     * Key 为 RPC 请求数据 ID，Value 为该请求数据对应的 {@link CountDownLatch} 实例
      */
     private final ConcurrentHashMap<Long, CountDownLatch> latchMap = new ConcurrentHashMap<>();
 
     /**
-     * Key 为 RPC 请求数据包 ID，Value 为该请求数据包对应的 RPC 响应数据包
+     * Key 为 RPC 请求数据 ID，Value 为该请求数据对应的 RPC 响应数据
      */
     private final ConcurrentHashMap<Long, RpcPacket> resultMap = new ConcurrentHashMap<>();
 
@@ -94,17 +109,23 @@ public class DirectRpcClient implements RpcClient {
     private final int timeout;
 
     /**
-     * RPC 服务调用方 与 RPC 服务提供方进行数据交互的管道
-     */
-    private final RpcChannel rpcChannel;
-
-    /**
      * Java 对象与字节数组转换器
      */
     private final Transcoder transcoder;
 
     /**
-     * RPC 服务调用客户端监听器封装类，捕获监听器执行错误
+     * RPC 执行过慢最小时间，单位：纳秒，不能小于等于0，RPC 调用执行时间大于该值时，
+     * 将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
+     */
+    private final long slowExecutionThreshold;
+
+    /**
+     * RPC 服务调用方 与 RPC 服务提供方进行数据交互的管道
+     */
+    private final RpcChannel rpcChannel;
+
+    /**
+     * {@code DirectRpcClient} 事件监听器封装类，捕获监听器执行错误
      */
     private final RpcClientListenerWrapper rpcClientListenerWrapper;
 
@@ -124,51 +145,72 @@ public class DirectRpcClient implements RpcClient {
     private volatile long lastTimeoutExceptionTime = 0;
 
     /**
-     * 构造一个 RPC 服务调用方使用的直连客户端，RPC 服务调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，心跳检测时间为 30 秒。
+     * 构造一个 RPC 服务调用方使用的直连客户端，{@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，RPC 调用超时时间设置为 5 秒，
+     * 最小压缩字节数设置为 64 KB，RPC 执行过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
-    public DirectRpcClient(String host) throws IllegalArgumentException, BuildSocketException {
-        this(host, null, 5000, 64 * 1024, 30, null);
+    public DirectRpcClient(String host, DirectRpcClientListener clientListener) throws IllegalArgumentException, BuildSocketException {
+        this(host, null, 5000, 64 * 1024, 50, 30, clientListener);
     }
 
     /**
-     * 构造一个 RPC 服务调用方使用的直连客户端
+     * 构造一个 RPC 服务调用方使用的直连客户端。
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
-     * @param configuration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
-     * @param timeout RPC 服务调用超时时间，单位：毫秒，不能小于等于0
-     * @param compressionThreshold 最小压缩字节数，当 数据包 body 字节数小于或等于该值，不进行压缩，不能小于等于0
-     * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内当前管道如果没有任何数据交互，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
-     * @param clientListener RPC 服务调用客户端监听器，允许为 {@code null}
-     * @throws IllegalArgumentException 如果 timeout 小于等于0
-     * @throws IllegalArgumentException 如果 compressionThreshold 小于等于0
+     * @param configuration {@link Socket} 配置信息，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
+     * @param timeout RPC 调用超时时间，单位：毫秒，不能小于等于 0
+     * @param compressionThreshold 最小压缩字节数，当数据 body 字节数小于或等于该值，不进行压缩，不能小于等于 0
+     * @param slowExecutionThreshold RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0，RPC 调用执行时间大于该值时，将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
+     * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内没有任何数据交互，将会发送一个心跳请求数据，如果该值小于等于 0，则不进行检测
+     * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
+     * @throws IllegalArgumentException 如果 RPC 调用超时时间小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果最小压缩字节数小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 执行过慢最小时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
     public DirectRpcClient(String host, SocketConfiguration configuration, int timeout, int compressionThreshold,
-        int heartbeatPeriod, RpcClientListener clientListener) throws IllegalArgumentException, BuildSocketException {
+        int slowExecutionThreshold, int heartbeatPeriod, DirectRpcClientListener clientListener)
+            throws IllegalArgumentException, BuildSocketException {
         if (timeout <= 0) {
-            LOG.error("Create DirectRpcClient failed. Timeout could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
-                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold + "`. ClientListener: `"
-                    + clientListener + "`.");
-            throw new IllegalArgumentException("Create DirectRpcClient failed. Timeout could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
-                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold + "`. ClientListener: `"
-                    + clientListener + "`.");
+            LOG.error("Create DirectRpcClient failed: `timeout could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
+            throw new IllegalArgumentException("Create DirectRpcClient failed: `timeout could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
         }
         if (compressionThreshold <= 0) {
-            LOG.error("Create DirectRpcClient failed. CompressionThreshold could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
-                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold + "`. ClientListener: `"
-                    + clientListener + "`.");
-            throw new IllegalArgumentException("Create DirectRpcClient failed. CompressionThreshold could not be equal or less than 0. Host: `" + host + "`. Configuration: `"
-                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold + "`. ClientListener: `"
-                    + clientListener + "`.");
+            LOG.error("Create DirectRpcClient failed: `CompressionThreshold could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
+            throw new IllegalArgumentException("Create DirectRpcClient failed: `CompressionThreshold could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
+        }
+        if (slowExecutionThreshold <= 0) {
+            LOG.error("Create DirectRpcClient failed: `SlowExecutionThreshold could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
+            throw new IllegalArgumentException("Create DirectRpcClient failed: `SlowExecutionThreshold could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
+                    + configuration + "`. Timeout: `" + timeout + "`. CompressionThreshold: `" + compressionThreshold +
+                    "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. HeartbeatPeriod: `" + heartbeatPeriod +
+                    "`. DirectRpcClientListener: `" + clientListener + "`.");
         }
         this.host = host;
         this.timeout = timeout;
         this.transcoder = new SimpleTranscoder(compressionThreshold, RpcClientCompressionMonitorFactory.get());
+        //将毫秒转换为纳秒
+        this.slowExecutionThreshold = TimeUnit.NANOSECONDS.convert(slowExecutionThreshold, TimeUnit.MILLISECONDS);
         this.executionMonitor = RpcClientExecutionMonitorFactory.get(host);
         this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, new RpcChannelListenerSkeleton() {
 
@@ -181,7 +223,7 @@ public class DirectRpcClient implements RpcClient {
                         resultMap.put(packetId, packet);
                         latch.countDown();
                     }
-                } else {
+                } else { //should not happen
                     LOG.error("Unrecognized rpc packet: `{}`", packet);
                 }
             }
@@ -208,10 +250,12 @@ public class DirectRpcClient implements RpcClient {
         long startTime = System.nanoTime();
         try {
             if (timeout <= 0) {
-                LOG.error("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
-                rpcClientListenerWrapper.onError(this, method, args);
+                LOG.error("RPC execute failed: `timeout could not be equal or less than 0`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+                rpcClientListenerWrapper.onError(host, method, args);
                 executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                throw new RpcException("Timeout could not be equal or less than 0. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                throw new RpcException("RPC execute failed: `timeout could not be equal or less than 0`. Timeout: `" + timeout
+                        + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
             }
             validateArguments(startTime, method, args);
             RpcRequestMessage rpcRequestMessage = new RpcRequestMessage();
@@ -219,10 +263,12 @@ public class DirectRpcClient implements RpcClient {
             rpcRequestMessage.setMethodUniqueName(ReflectUtil.getMethodUniqueName(method));
             rpcRequestMessage.setArguments(args);
             if (!rpcChannel.isActive()) {
-                LOG.error("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
-                rpcClientListenerWrapper.onClosed(this, method, args);
+                LOG.error("RPC execute failed: `inactive rpc channel`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+                rpcClientListenerWrapper.onClosed(host, method, args);
                 executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                throw new IllegalStateException("Inactive rpc channel. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                throw new IllegalStateException("RPC execute failed: `inactive rpc channel`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
             }
 
             long packetId = packetIdGenerator.incrementAndGet();
@@ -230,10 +276,12 @@ public class DirectRpcClient implements RpcClient {
             try {
                 rpcPacket = RpcPacketBuilder.buildRequestPacket(packetId, OperationCode.REMOTE_PROCEDURE_CALL, rpcRequestMessage, transcoder);
             } catch (Exception e) {
-                LOG.error("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
-                rpcClientListenerWrapper.onError(this, method, args);
+                LOG.error("RPC execute failed: `build RpcPacket failed`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.", e);
+                rpcClientListenerWrapper.onError(host, method, args);
                 executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                throw new RpcException("Build RpcPacket failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
+                throw new RpcException("RPC execute failed: `build RpcPacket failed`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.", e);
             }
             CountDownLatch latch = new CountDownLatch(1);
             latchMap.put(packetId, latch);
@@ -252,62 +300,71 @@ public class DirectRpcClient implements RpcClient {
                         try {
                             return transcoder.decode(responsePacket.getBody(), responsePacket.getSerializationType(), responsePacket.getCompressionType());
                         } catch (Exception e) {
-                            LOG.error("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
-                            rpcClientListenerWrapper.onError(this, method, args);
+                            LOG.error("RPC execute failed: `decode response packet failed`. Timeout: `" + timeout + "`. Method: `"
+                                    + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.", e);
+                            rpcClientListenerWrapper.onError(host, method, args);
                             executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                            throw new RpcException("Decode response packet failed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.", e);
+                            throw new RpcException("RPC execute failed: `decode response packet failed`. Timeout: `" + timeout + "`. Method: `"
+                                    + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.", e);
                         }
                     } else if (status == ResponseStatusCode.TOO_BUSY) {
-                        LOG.error("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
-                        rpcClientListenerWrapper.onTooBusy(this, method, args);
+                        LOG.error("RPC execute failed: `too busy`. Timeout: `" + timeout + "`. Method: `"
+                                + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+                        rpcClientListenerWrapper.onTooBusy(host, method, args);
                         executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY);
-                        throw new TooBusyException("`Too busy`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
+                        throw new TooBusyException("RPC execute failed: `too busy`. Timeout: `" + timeout + "`. Method: `"
+                                + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
                     } else {
                         String errorMessage;
                         switch (status) {
                             case ResponseStatusCode.INVOCATION_TARGET_ERROR:
                                 try {
-                                    errorMessage = "Invocation target error: " + transcoder.decode(responsePacket.getBody(),
-                                            responsePacket.getSerializationType(), responsePacket.getCompressionType());
+                                    errorMessage = transcoder.decode(responsePacket.getBody(), responsePacket.getSerializationType(), responsePacket.getCompressionType());
                                 } catch (Exception e) {
-                                    errorMessage = "Invocation target error: Decode error message failed";
+                                    errorMessage = "decode error message failed";
                                 }
-                                rpcClientListenerWrapper.onInvocationTargetError(this, method, args, errorMessage);
+                                rpcClientListenerWrapper.onInvocationTargetError(host, method, args, errorMessage);
                                 break;
                             case ResponseStatusCode.CLASS_NOT_FOUND:
-                                errorMessage = "Class not found";
-                                rpcClientListenerWrapper.onClassNotFound(this, method, args);
+                                errorMessage = "class not found";
+                                rpcClientListenerWrapper.onClassNotFound(host, method, args);
                                 break;
                             case ResponseStatusCode.NO_SUCH_METHOD:
-                                errorMessage = "No such method";
-                                rpcClientListenerWrapper.onNoSuchMethod(this, method, args);
+                                errorMessage = "no such method";
+                                rpcClientListenerWrapper.onNoSuchMethod(host, method, args);
                                 break;
                             case ResponseStatusCode.ILLEGAL_ARGUMENT:
-                                errorMessage = "Illegal argument";
-                                rpcClientListenerWrapper.onIllegalArgument(this, method, args);
+                                errorMessage = "illegal argument";
+                                rpcClientListenerWrapper.onIllegalArgument(host, method, args);
                                 break;
                             case ResponseStatusCode.INTERNAL_ERROR:
-                                errorMessage = "Server internal error";
-                                rpcClientListenerWrapper.onError(this, method, args);
+                                errorMessage = "server internal error";
+                                rpcClientListenerWrapper.onError(host, method, args);
                                 break;
                             default:
-                                errorMessage = "Unrecognized response status code: " + status;
-                                rpcClientListenerWrapper.onError(this, method, args);
+                                errorMessage = "unrecognized response status code [" + status + "]";
+                                rpcClientListenerWrapper.onError(host, method, args);
                         }
-                        LOG.error("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
+                        LOG.error("RPC execute failed: `" + errorMessage + "`. See the rpc server log for more information. Timeout: `"
+                                + timeout + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args)
+                                + "`. DirectRpcClient: `" + this + "`.");
                         executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                        throw new RpcException("`" + errorMessage + "`. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`. See the rpc server log for more information.");
+                        throw new RpcException("RPC execute failed: `" + errorMessage + "`. See the rpc server log for more information. Timeout: `"
+                                + timeout + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args)
+                                + "`. DirectRpcClient: `" + this + "`.");
                     }
                 } else {
-                    LOG.error("Empty response packet. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
-                    rpcClientListenerWrapper.onError(this, method, args);
+                    LOG.error("RPC execute failed: `empty response packet`. Timeout: `" + timeout + "`. Method: `" + method
+                            + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+                    rpcClientListenerWrapper.onError(host, method, args);
                     executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                    throw new RpcException("Empty response packet. Maybe DirectRpcClient has been closed. Host: `" + host + "`. RpcRequestMessage: `" + rpcRequestMessage + "`.");
+                    throw new RpcException("RPC execute failed: `empty response packet`. Timeout: `" + timeout + "`. Method: `" + method
+                            + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
                 }
             } else {
                 latchMap.remove(packetId);
-                LOG.error("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
-                        + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                LOG.error("RPC execute failed: `wait response timeout`. Timeout: `" + timeout + "`. Method: `" + method
+                        + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
                 //如果两次超时异常发生在 1s 以内，则认为是连续失败
                 if (System.currentTimeMillis() - lastTimeoutExceptionTime < 1000) {
                     continuousTimeoutExceptionTimes ++;
@@ -321,15 +378,15 @@ public class DirectRpcClient implements RpcClient {
                             continuousTimeoutExceptionTimes, host);
                     close();
                 }
-                rpcClientListenerWrapper.onTimeout(this, method, args);
+                rpcClientListenerWrapper.onTimeout(host, method, args);
                 executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT);
-                throw new TimeoutException("Wait rpc execute response timeout: `" + timeout + "ms`. Host: `"
-                        + host + "`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                throw new TimeoutException("RPC execute failed: `wait response timeout`. Timeout: `" + timeout + "`. Method: `"
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
             }
         } finally {
             long executedNanoTime = System.nanoTime() - startTime;
-            if (executedNanoTime > RpcClientListener.SLOW_EXECUTION_THRESHOLD) {
-                rpcClientListenerWrapper.onSlowExecution(this, method, args, executedNanoTime);
+            if (executedNanoTime > slowExecutionThreshold) {
+                rpcClientListenerWrapper.onSlowExecution(host, method, args, executedNanoTime);
             }
             executionMonitor.onExecuted(startTime);
         }
@@ -338,18 +395,22 @@ public class DirectRpcClient implements RpcClient {
     @SuppressWarnings("unchecked")
     private void validateArguments(long startTime, Method method, Object[] args) throws RpcException {
         if (method == null) {
-            LOG.error("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
-            rpcClientListenerWrapper.onError(this, null, args);
+            LOG.error("RPC execute failed: `method could not be null`. Method: `null`. Arguments: `"
+                    + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+            rpcClientListenerWrapper.onError(host, null, args);
             executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-            throw new RpcException("Method could not be null. Method: `null`. Arguments: `" + Arrays.toString(args) + ".");
+            throw new RpcException("RPC execute failed: `method could not be null`. Method: `null`. Arguments: `"
+                    + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
         }
         Class<?>[] parameterTypes = method.getParameterTypes();
         int argsLength = args != null ? args.length : 0;
         if (parameterTypes.length != argsLength) {
-            LOG.error("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
-            rpcClientListenerWrapper.onError(this, method, args);
+            LOG.error("RPC execute failed: `wrong argument size`. Method: `" + method + "`. Arguments: `"
+                    + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+            rpcClientListenerWrapper.onError(host, method, args);
             executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-            throw new RpcException("Illegal argument: wrong argument size. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+            throw new RpcException("RPC execute failed: `wrong argument size`. Method: `" + method + "`. Arguments: `"
+                    + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
         }
         if (args != null && args.length > 0) {
             for (int i = 0; i < args.length; i++) {
@@ -357,18 +418,20 @@ public class DirectRpcClient implements RpcClient {
                 if (arg != null && !(arg instanceof Serializable)) {
                     if (arg instanceof List) {
                         args[i] = new ArrayList((List)arg);
-                        LOG.warn("Illegal argument: Not serializable List. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+                        LOG.warn("RPC execute warning: `not serializable List`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                     } else if (arg instanceof Map) {
                         args[i] = new HashMap((Map)arg);
-                        LOG.warn("Illegal argument: Not serializable Map. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+                        LOG.warn("RPC execute warning: `not serializable Map`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                     } else if (arg instanceof Set) {
                         args[i] = new HashSet((Set)arg);
-                        LOG.warn("Illegal argument: Not serializable Set. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+                        LOG.warn("RPC execute warning: `not serializable Set`. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
                     } else {
-                        LOG.error("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
-                        rpcClientListenerWrapper.onError(this, method, args);
+                        LOG.error("RPC execute failed: `not serializable argument`. Method: `" + method + "`. Arguments: `"
+                                + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
+                        rpcClientListenerWrapper.onError(host, method, args);
                         executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
-                        throw new RpcException("Illegal argument: Not serializable argument. Method: `" + method + "`. Arguments: `" + Arrays.toString(args) + ".");
+                        throw new RpcException("RPC execute failed: `not serializable argument`. Method: `" + method + "`. Arguments: `"
+                                + Arrays.toString(args) + "`. DirectRpcClient: `" + this + "`.");
                     }
                 }
             }
@@ -381,27 +444,27 @@ public class DirectRpcClient implements RpcClient {
     }
 
     /**
-     * 判断 RPC 服务提供方是否已发送下线请求
+     * 判断是否已接收到 RPC 服务提供方发送的下线操作请求。
      *
-     * @return RPC 服务提供方是否已发送下线请求
+     * @return 是否已接收到 RPC 服务提供方发送的下线操作请求
      */
     public boolean isOffline() {
         return rpcChannel.isOffline();
     }
 
     /**
-     * 判断当前 RPC 服务调用客户端是否可用
+     * 判断当前 {@code DirectRpcClient} 是否可用。
      *
-     * @return 当前 RPC 服务调用客户端是否可用
+     * @return 当前 {@code DirectRpcClient} 是否可用
      */
     public boolean isActive() {
         return rpcChannel.isActive();
     }
 
     /**
-     * 获得 RPC 服务提供方的远程主机地址
+     * 获得 RPC 服务提供方的远程主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182。
      *
-     * @return RPC 服务提供方的远程主机地址
+     * @return RPC 服务提供方的远程主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
     public String getHost() {
         return host;
@@ -413,123 +476,128 @@ public class DirectRpcClient implements RpcClient {
                 "packetIdGenerator=" + packetIdGenerator +
                 ", host='" + host + '\'' +
                 ", timeout=" + timeout +
+                ", slowExecutionThreshold=" + slowExecutionThreshold +
+                ", rpcChannel=" + rpcChannel +
+                ", rpcClientListenerWrapper=" + rpcClientListenerWrapper +
+                ", continuousTimeoutExceptionTimes=" + continuousTimeoutExceptionTimes +
+                ", lastTimeoutExceptionTime=" + lastTimeoutExceptionTime +
                 '}';
     }
 
     /**
-     * RPC 服务调用客户端监听器封装类，捕获监听器执行错误
+     * {@code DirectRpcClient} 事件监听器封装类，捕获监听器执行错误。
      */
-    private class RpcClientListenerWrapper implements RpcClientListener {
+    private static class RpcClientListenerWrapper implements DirectRpcClientListener {
 
-        private final RpcClientListener rpcClientListener;
+        private final DirectRpcClientListener directRpcClientListener;
 
-        private RpcClientListenerWrapper(RpcClientListener rpcClientListener) {
-            this.rpcClientListener = rpcClientListener;
+        private RpcClientListenerWrapper(DirectRpcClientListener directRpcClientListener) {
+            this.directRpcClientListener = directRpcClientListener;
         }
 
         @Override
-        public void onClassNotFound(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onClassNotFound(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onClassNotFound(client, method, args);
+                    directRpcClientListener.onClassNotFound(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onClassNotFound() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onClassNotFound() failed. Host: `" + host + "`. Method: `"
                         + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onNoSuchMethod(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onNoSuchMethod(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onNoSuchMethod(client, method, args);
+                    directRpcClientListener.onNoSuchMethod(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onNoSuchMethod() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onNoSuchMethod() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onIllegalArgument(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onIllegalArgument(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onIllegalArgument(client, method, args);
+                    directRpcClientListener.onIllegalArgument(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onIllegalArgument() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onIllegalArgument() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onInvocationTargetError(RpcClient client, Method method, Object[] args, String errorMessage) {
-            if (rpcClientListener != null) {
+        public void onInvocationTargetError(String host, Method method, Object[] args, String errorMessage) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onInvocationTargetError(client, method, args, errorMessage);
+                    directRpcClientListener.onInvocationTargetError(host, method, args, errorMessage);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onInvocationTargetError() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onInvocationTargetError() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`. Error message: `" + errorMessage + "`.");
                 }
             }
         }
 
         @Override
-        public void onTimeout(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onTimeout(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onTimeout(client, method, args);
+                    directRpcClientListener.onTimeout(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onTimeout() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onTimeout() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onError(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onError(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onError(client, method, args);
+                    directRpcClientListener.onError(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onError() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onError() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onTooBusy(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onTooBusy(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onTooBusy(client, method, args);
+                    directRpcClientListener.onTooBusy(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onTooBusy() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onTooBusy() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onClosed(RpcClient client, Method method, Object[] args) {
-            if (rpcClientListener != null) {
+        public void onClosed(String host, Method method, Object[] args) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onClosed(client, method, args);
+                    directRpcClientListener.onClosed(host, method, args);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onClosed() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onClosed() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
                 }
             }
         }
 
         @Override
-        public void onSlowExecution(RpcClient client, Method method, Object[] args, long executedNanoTime) {
-            if (rpcClientListener != null) {
+        public void onSlowExecution(String host, Method method, Object[] args, long executedNanoTime) {
+            if (directRpcClientListener != null) {
                 try {
-                    rpcClientListener.onSlowExecution(client, method, args, executedNanoTime);
+                    directRpcClientListener.onSlowExecution(host, method, args, executedNanoTime);
                 } catch (Exception e) {
-                    LOG.error("Call RpcClientListener#onSlowExecution() failed. Client: `" + client + "`. Method: `"
+                    LOG.error("Call DirectRpcClientListener#onSlowExecution() failed. Host: `" + host + "`. Method: `"
                             + method + "`. Arguments: `" + Arrays.toString(args) + "`. ExecutedNanoTime: `" + executedNanoTime + "`.");
                 }
             }

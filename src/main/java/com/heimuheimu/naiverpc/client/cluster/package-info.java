@@ -23,8 +23,8 @@
  */
 
 /**
- * 提供直连、集群、广播三种模式的 RPC 调用客户端，供 RPC 服务调用方选择使用。
+ * 提供 RPC 服务调用方使用的集群客户端 {@link com.heimuheimu.naiverpc.client.cluster.RpcClusterClient}，RPC 调用请求将根据轮询策略（Round-Robin）进行调度。
  *
  * @author heimuheimu
  */
-package com.heimuheimu.naiverpc.client;
+package com.heimuheimu.naiverpc.client.cluster;

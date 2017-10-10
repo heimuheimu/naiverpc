@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 广播 RPC 服务调用客户端线程工厂，生成可识别的线程名
+ * {@code ParallelRpcBroadcastClient } 使用的线程工厂，生成可识别的线程名。
  *
  * @author heimuheimu
  */

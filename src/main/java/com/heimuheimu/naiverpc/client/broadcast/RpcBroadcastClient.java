@@ -29,78 +29,80 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
- * 广播 RPC 服务调用客户端，连接多台相同功能的 RPC 服务提供方，每个 RPC 调用都会同时发送至全部（多台） RPC 服务提供方，并返回每个服务的执行结果
- * <p>注意：实现类必须保证是线程安全的</p>
+ * RPC 服务调用方使用的广播客户端，RPC 调用请求会发送至 {@code RpcBroadcastClient} 中的多个 RPC 服务提供方进行执行，并返回结果 {@code Map}，
+ * {@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}。
+ *
+ * <p><strong>说明：</strong> {@code RpcBroadcastClient } 的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */
 public interface RpcBroadcastClient extends Closeable {
 
     /**
-     * 获得当前广播 RPC 服务调用客户端使用的提供 RPC 服务的主机地址数组，该方法不会返回 {@code null}
-     * <br>RPC 服务的主机地址由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * 获得当前 {@code RpcBroadcastClient} 使用的提供 RPC 服务的主机地址数组，该方法不会返回 {@code null}，
+     * RPC 服务的主机地址由主机名和端口组成，":"符号分割，例如：localhost:4182。
      *
      * @return 提供 RPC 服务的主机地址数组
      */
     String[] getHosts();
 
     /**
-     * 广播执行调用远程服务操作，并返回执行结果，超时时间使用客户端默认的超时时间设置。
-     * <p>执行结果 Map 的 Key 为提供 RPC 服务的主机地址，Value 为向该服务发起远程调用执行结果。
-     * {@link #getHosts()} 中的所有提供 RPC 服务的主机地址均会作为 Key 在执行结果 Map 中出现。</p>
-     * <p>注意：该方法不会返回 {@code null}</p>
+     * 向所有 RPC 服务提供方发起调用请求，并返回结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}，
+     * 超时时间使用 {@code RpcBroadcastClient} 实现类默认的超时时间设置。
      *
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
-     * @return 执行结果 Map，Key 为提供 RPC 服务的主机地址，Value 为向服务发起远程调用的执行结果
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
+     * <p><strong>说明：</strong> {@link #getHosts()} 中的所有主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
+     *
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
+     * @return 结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}
+     * @throws IllegalStateException 如果 {@code RpcBroadcastClient} 处于不可服务状态，将抛出此异常
      */
     Map<String, BroadcastResponse> execute(Method method, Object[] args) throws IllegalStateException;
 
     /**
-     * 广播执行调用远程服务操作，并返回执行结果。
-     * <p>执行结果 Map 的 Key 为提供 RPC 服务的主机地址，Value 为向该服务发起远程调用执行结果。
-     * {@link #getHosts()} 中的所有提供 RPC 服务的主机地址均会作为 Key 在执行结果 Map 中出现。</p>
-     * <p>注意：该方法不会返回 {@code null}</p>
+     * 向所有 RPC 服务提供方发起调用请求，并返回结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}。
      *
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
-     * @param timeout 超时时间，单位为毫秒，如果小于等于 0，则使用客户端默认的超时时间设置
-     * @return 执行结果 Map，Key 为提供 RPC 服务的主机地址，Value 为向服务发起远程调用的执行结果
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
+     * <p><strong>说明：</strong> {@link #getHosts()} 中的所有主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
+     *
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
+     * @param timeout RPC 调用超时时间，单位为毫秒，不允许小于等于 0
+     * @return 结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}
+     * @throws IllegalStateException 如果 {@code RpcBroadcastClient} 处于不可服务状态，将抛出此异常
      */
     Map<String, BroadcastResponse> execute(Method method, Object[] args, long timeout) throws IllegalStateException;
 
     /**
-     * 向指定的提供 RPC 服务的主机地址数组广播执行调用远程服务操作，并返回执行结果，超时时间使用客户端默认的超时时间设置。
-     * <p>执行结果 Map 的 Key 为提供 RPC 服务的主机地址，Value 为向该服务发起远程调用执行结果。
-     * 指定的提供 RPC 服务的主机地址数组中的所有地址均会作为 Key 在执行结果 Map 中出现。</p>
-     * <p>注意：指定的提供 RPC 服务的主机地址数组中的地址必须包含在 {@link #getHosts()} 中，
-     * 否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}</p>
+     * 向指定的 RPC 服务提供方发起调用请求，并返回结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}，
+     * 超时时间使用 {@code RpcBroadcastClient} 实现类默认的超时时间设置。
      *
-     * @param hosts 提供 RPC 服务的主机地址数组，数组中的地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
-     * @return 执行结果 Map，Key 为提供 RPC 服务的主机地址，Value 为向服务发起远程调用的执行结果
-     * @throws IllegalArgumentException 如果 hosts 为 {@code null} 或空数组，将抛出此异常
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
+     * <p><strong>说明：</strong> 指定的 RPC 服务提供方主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
+     *
+     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
+     *
+     * @param hosts RPC 服务提供方主机地址数组，地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
+     * @return 结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}
+     * @throws IllegalArgumentException 如果 RPC 服务提供方主机地址数组为 {@code null} 或空数组，将抛出此异常
+     * @throws IllegalStateException 如果 {@code RpcBroadcastClient} 处于不可服务状态，将抛出此异常
      */
     Map<String, BroadcastResponse> execute(String[] hosts, Method method, Object[] args) throws IllegalArgumentException, IllegalStateException;
 
     /**
-     * 向指定的提供 RPC 服务的主机地址数组广播执行调用远程服务操作，并返回执行结果。
-     * <p>执行结果 Map 的 Key 为提供 RPC 服务的主机地址，Value 为向该服务发起远程调用执行结果。
-     * 指定的提供 RPC 服务的主机地址数组中的所有地址均会作为 Key 在执行结果 Map 中出现。</p>
-     * <p>注意：指定的提供 RPC 服务的主机地址数组中的地址必须包含在 {@link #getHosts()} 中，
-     * 否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}</p>
+     * 向指定的 RPC 服务提供方发起调用请求，并返回结果 {@code Map}，{@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}。
      *
-     * @param hosts 提供 RPC 服务的主机地址数组，数组中的地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
-     * @param method 需要执行的远程服务
-     * @param args 执行该远程服务所需的参数，如果没有参数则使用 {@code null} 或空数组
-     * @param timeout 超时时间，单位为毫秒，如果小于等于 0，则使用客户端默认的超时时间设置
+     * <p><strong>说明：</strong> 指定的 RPC 服务提供方主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
+     *
+     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
+     *
+     * @param hosts RPC 服务提供方主机地址数组，地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
+     * @param method RPC 调用的方法
+     * @param args RPC 调用使用的参数数组，如果没有参数则使用 {@code null} 或空数组
+     * @param timeout RPC 调用超时时间，单位为毫秒，不允许小于等于 0
      * @return 执行结果 Map，Key 为提供 RPC 服务的主机地址，Value 为向服务发起远程调用的执行结果
-     * @throws IllegalArgumentException 如果 hosts 为 {@code null} 或空数组，将抛出此异常
-     * @throws IllegalStateException 如果客户端处于不可服务状态，将抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 服务提供方主机地址数组为 {@code null} 或空数组，将抛出此异常
+     * @throws IllegalStateException 如果 {@code RpcBroadcastClient} 处于不可服务状态，将抛出此异常
      */
     Map<String, BroadcastResponse> execute(String[] hosts, Method method, Object[] args, long timeout) throws IllegalArgumentException, IllegalStateException;
 

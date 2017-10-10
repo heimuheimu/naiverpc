@@ -23,8 +23,10 @@
  */
 
 /**
- * 提供直连、集群、广播三种模式的 RPC 调用客户端，供 RPC 服务调用方选择使用。
+ * 提供 RPC 服务调用方使用的广播客户端 {@link com.heimuheimu.naiverpc.client.broadcast.ParallelRpcBroadcastClient}，
+ * RPC 调用请求会并行发送至 {@code ParallelRpcBroadcastClient} 中的多个 RPC 服务提供方进行执行，并返回结果 {@code Map}，
+ * {@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link com.heimuheimu.naiverpc.client.broadcast.BroadcastResponse}。
  *
  * @author heimuheimu
  */
-package com.heimuheimu.naiverpc.client;
+package com.heimuheimu.naiverpc.client.broadcast;
