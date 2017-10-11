@@ -70,7 +70,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <h3>数据监控</h3>
  * <blockquote>
  * 可通过 {@link RpcClientCompressionMonitorFactory} 获取 RPC 服务调用方压缩信息监控数据。<br>
- * 可通过 {@link RpcClientExecutionMonitorFactory} 获取单个 RPC 服务提供方的 RPC 调用执行信息监控数据。
+ * 可通过 {@link RpcClientExecutionMonitorFactory} 获取单个 RPC 服务提供方的 RPC 调用信息监控数据。
  * </blockquote>
  *
  * <p><strong>说明：</strong>{@code DirectRpcClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
@@ -114,7 +114,7 @@ public class DirectRpcClient implements RpcClient {
     private final Transcoder transcoder;
 
     /**
-     * RPC 执行过慢最小时间，单位：纳秒，不能小于等于0，RPC 调用执行时间大于该值时，
+     * RPC 调用过慢最小时间，单位：纳秒，不能小于等于0，RPC 调用时间大于该值时，
      * 将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
      */
     private final long slowExecutionThreshold;
@@ -146,7 +146,7 @@ public class DirectRpcClient implements RpcClient {
 
     /**
      * 构造一个 RPC 服务调用方使用的直连客户端，{@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，RPC 调用超时时间设置为 5 秒，
-     * 最小压缩字节数设置为 64 KB，RPC 执行过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
+     * 最小压缩字节数设置为 64 KB，RPC 调用过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
@@ -164,12 +164,12 @@ public class DirectRpcClient implements RpcClient {
      * @param configuration {@link Socket} 配置信息，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
      * @param timeout RPC 调用超时时间，单位：毫秒，不能小于等于 0
      * @param compressionThreshold 最小压缩字节数，当数据 body 字节数小于或等于该值，不进行压缩，不能小于等于 0
-     * @param slowExecutionThreshold RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0，RPC 调用执行时间大于该值时，将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
+     * @param slowExecutionThreshold RPC 调用过慢最小时间，单位：毫秒，不能小于等于 0，RPC 调用时间大于该值时，将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内没有任何数据交互，将会发送一个心跳请求数据，如果该值小于等于 0，则不进行检测
      * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 调用超时时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果最小压缩字节数小于等于 0，将会抛出此异常
-     * @throws IllegalArgumentException 如果 RPC 执行过慢最小时间小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 调用过慢最小时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */

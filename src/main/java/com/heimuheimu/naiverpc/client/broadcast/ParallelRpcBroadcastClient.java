@@ -96,7 +96,7 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
     private final int compressionThreshold;
 
     /**
-     * 创建 {@code DirectRpcClient} 使用的 RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0
+     * 创建 {@code DirectRpcClient} 使用的 RPC 调用过慢最小时间，单位：毫秒，不能小于等于 0
      */
     private final int slowExecutionThreshold;
 
@@ -148,7 +148,7 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
     /**
      * 构造一个 RPC 服务调用方使用的广播客户端，并行执行 RPC 调用请求使用的线程池大小为 500，创建 {@code DirectRpcClient} 时，
      * {@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，RPC 调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，
-     * RPC 执行过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
+     * RPC 调用过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
      *
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182，不允许为 {@code null} 或空数组
      * @param directRpcClientListener 创建 {@code DirectRpcClient} 使用的 {@code DirectRpcClient} 事件监听器，允许为 {@code null}
@@ -169,7 +169,7 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
      * @param configuration 创建 {@code DirectRpcClient} 使用的 {@link Socket} 配置信息，允许为 {@code null}
      * @param timeout 创建 {@code DirectRpcClient} 使用的 RPC 调用超时时间，单位：毫秒，不能小于等于 0
      * @param compressionThreshold 创建 {@code DirectRpcClient} 使用的最小压缩字节数，不能小于等于 0
-     * @param slowExecutionThreshold 🈵️创建 {@code DirectRpcClient} 使用的 RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0
+     * @param slowExecutionThreshold 创建 {@code DirectRpcClient} 使用的 RPC 调用过慢最小时间，单位：毫秒，不能小于等于 0
      * @param heartbeatPeriod 创建 {@code DirectRpcClient} 使用的心跳检测时间，单位：秒
      * @param directRpcClientListener 创建 {@code DirectRpcClient} 使用的 {@code DirectRpcClient} 事件监听器，允许为 {@code null}
      * @param rpcBroadcastClientListener {@code RpcBroadcastClient} 事件监听器，允许为 {@code null}
@@ -177,7 +177,7 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址数组为 {@code null} 或空数组，将会抛出此异常
      * @throws IllegalArgumentException 如果 RPC 调用超时时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果最小压缩字节数小于等于 0，将会抛出此异常
-     * @throws IllegalArgumentException 如果 RPC 执行过慢最小时间小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果 RPC 调用过慢最小时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果并行执行 RPC 调用请求使用的线程池大小小于等于 0，将会抛出此异常
      * @throws IllegalStateException  如果所有提供 RPC 服务的主机地址都不可用，将会抛出此异常
      * @see DirectRpcClient

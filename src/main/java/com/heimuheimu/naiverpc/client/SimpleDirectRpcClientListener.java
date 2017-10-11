@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 提供 {@link com.heimuheimu.naiverpc.client.DirectRpcClientListener} 监听器的一个简单实现，将 RPC 执行错误和 RPC 执行过慢打印至不同的日志文件中。
+ * 提供 {@link com.heimuheimu.naiverpc.client.DirectRpcClientListener} 监听器的一个简单实现，将 RPC 执行错误和 RPC 调用过慢打印至不同的日志文件中。
  *
  * <h3>RPC 执行错误 Log4j 配置</h3>
  * <strong>注意：</strong> <code>${log.output.directory}</code> 为占位替换符，请自行定义。
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </blockquote>
  *
- * <h3>RPC 执行过慢 Log4j 配置</h3>
+ * <h3>RPC 调用过慢 Log4j 配置</h3>
  * <strong>注意：</strong> <code>${log.output.directory}</code> 为占位替换符，请自行定义。
  * <blockquote>
  * <pre>

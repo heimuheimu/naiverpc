@@ -78,7 +78,7 @@ public interface RpcBroadcastClient extends Closeable {
      *
      * <p><strong>说明：</strong> 指定的 RPC 服务提供方主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
      *
-     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
+     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
      *
      * @param hosts RPC 服务提供方主机地址数组，地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
      * @param method RPC 调用的方法
@@ -94,7 +94,7 @@ public interface RpcBroadcastClient extends Closeable {
      *
      * <p><strong>说明：</strong> 指定的 RPC 服务提供方主机地址均会作为 Key 在结果 {@code Map} 中存在，该方法不会返回 {@code null}。</p>
      *
-     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用执行状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
+     * <p><strong>注意：</strong> 指定的 RPC 服务提供方主机地址必须包含在 {@link #getHosts()} 中，否则该主机的 RPC 调用状态码为 {@link BroadcastResponse#CODE_UNKNOWN_HOST}。</p>
      *
      * @param hosts RPC 服务提供方主机地址数组，地址必须包含在 {@link #getHosts()} 中，不允许为 {@code null} 或空数组
      * @param method RPC 调用的方法

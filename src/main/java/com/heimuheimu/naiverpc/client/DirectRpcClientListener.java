@@ -112,12 +112,12 @@ public interface DirectRpcClientListener {
     void onClosed(String host, Method method, Object[] args);
 
     /**
-     * 当 RPC 调用执行过慢时，将触发该监听事件。
+     * 当 RPC 调用过慢时，将触发该监听事件。
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param method RPC 调用的方法
      * @param args RPC 调用使用的参数数组，可能为 {@code null}
-     * @param executedNanoTime RPC 调用执行时间，单位：纳秒
+     * @param executedNanoTime RPC 调用时间，单位：纳秒
      */
     void onSlowExecution(String host, Method method, Object[] args, long executedNanoTime);
 }
