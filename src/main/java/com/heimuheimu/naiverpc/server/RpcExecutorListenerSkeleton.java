@@ -29,12 +29,13 @@ import com.heimuheimu.naiverpc.message.RpcRequestMessage;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * RPC 服务执行监听器抽象实现类，继承该类的监听器，仅需重载自己所关心的事件，
- * 可防止 {@link RpcExecuteListener} 在后续版本增加方法时，需重新调整监听器实现类。
+ * {@link RpcExecutor} 事件监听器骨架类，可防止 {@link RpcExecutorListener} 在后续版本增加监听事件时，带来的编译错误。
+ *
+ * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */
-public abstract class RpcExecuteListenerSkeleton implements RpcExecuteListener {
+public abstract class RpcExecutorListenerSkeleton implements RpcExecutorListener {
 
     @Override
     public void onClassNotFound(RpcRequestMessage rpcRequestMessage) {

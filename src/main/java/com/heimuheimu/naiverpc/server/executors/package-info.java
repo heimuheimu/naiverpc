@@ -22,28 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.server.executors;
-
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * {@code AsyncJdkRpcExecutor} 使用的线程工厂，生成可识别的线程名。
+ * 提供基于 JDK 反射类库实现的 RPC 执行器 {@link com.heimuheimu.naiverpc.server.executors.AsyncJdkRpcExecutor}。
  *
  * @author heimuheimu
  */
-class NamedThreadFactory implements ThreadFactory {
-
-    private final AtomicInteger threadNumber = new AtomicInteger(1);
-
-    @Override
-    public Thread newThread(Runnable r) {
-        Thread t = new Thread(r);
-        t.setName("naiverpc-server-executor-" + threadNumber.getAndIncrement());
-        if (t.isDaemon())
-            t.setDaemon(false);
-        if (t.getPriority() != Thread.NORM_PRIORITY)
-            t.setPriority(Thread.NORM_PRIORITY);
-        return t;
-    }
-}
+package com.heimuheimu.naiverpc.server.executors;

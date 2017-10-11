@@ -45,9 +45,18 @@ import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * RPC 服务提供方，通过指定的监听端口与 RPC 服务调用客户端建立连接，为其提供 RPC 服务
+ * RPC 服务提供方通过 {@code RpcServer} 对外提供 RPC 服务，提供的 RPC 服务需要调用 {@link #register(Object)} 方法完成注册。
+ *
+ * <p>
+ *     {@code RpcServer} 实例应调用 {@link #init()} 方法，初始化成功后，才可对外提供 RPC 服务。
+ *     <br>当 {@code RpcServer} 需要关闭时，应先调用 {@link #offline()} 执行下线操作，防止正在执行中的 RPC 调用失败，
+ *     等待一段时间后，再调用 {@link #close()} 方法进行资源释放。
+ * </p>
+ *
+ * <p><strong>说明：</strong>{@code RpcServer} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
+ * @see AsyncJdkRpcExecutor
  */
 public class RpcServer implements Closeable {
 
@@ -56,75 +65,126 @@ public class RpcServer implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(RpcServer.class);
 
     /**
-     * 已连接的 RPC 服务调用客户端数据交互管道列表
+     * 已经与 RPC 调用方建立的 {@code RpcChannel} 列表
      */
     private final CopyOnWriteArrayList<RpcChannel> activeRpcChannelList = new CopyOnWriteArrayList<>();
 
     /**
-     * RPC 数据包交互管道事件监听器
+     * {@code RpcServer} 使用的 {@code RpcChannel} 事件监听器
      */
     private final RpcChannelListener rpcChannelListener = new RpcChannelListenerImpl();
 
     /**
-     * 当前实例所处状态
+     * {@code RpcServer} 所处状态
      */
     private volatile BeanStatusEnum state = BeanStatusEnum.UNINITIALIZED;
 
     /**
-     * 监听端口
+     * {@code RpcServer} 开启的 {@code Socket} 监听端口
      */
     private final int port;
 
     /**
-     * 与 RPC 服务调用客户端建立的数据交互管道所使用的 Socket 配置信息
+     * 创建 {@code RpcChannel} 使用的 {@code Socket} 配置信息
      */
     private final SocketConfiguration socketConfiguration;
 
     /**
-     * 远程调用执行器
+     * RPC 调用方请求的 RPC 方法执行器
      */
     private final RpcExecutor rpcExecutor;
 
+    /**
+     * {@code RpcServer} 后台线程，用于监听 RPC 调用方发起的建立连接请求
+     */
     private RpcServerTask rpcServerTask;
 
     /**
-     * 构造一个 RPC 服务提供方，监听端口为 4182，用于执行 RPC 服务调用请求的线程池最大数量为 200， 最小压缩字节数为 64 KB
+     * 构造一个 {@code RpcServer} 对外提供 RPC 服务，{@code Socket} 监听端口为 4182，{@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，
+     * 创建 {@code AsyncJdkRpcExecutor} 时，最小压缩字节数设置为 64 KB，RPC 执行过慢最小时间设置为 50 毫秒，使用的线程池最大数量为 500。
+     *
+     * @param rpcExecutorListener {@link RpcExecutor} 事件监听器，允许为 {@code null}
+     * @see AsyncJdkRpcExecutor
      */
-    public RpcServer() {
-        this(4182, null, 200, 64 * 1024, null);
+    public RpcServer(RpcExecutorListener rpcExecutorListener) {
+        this(4182, null, 64 * 1024, 50, rpcExecutorListener, 500);
     }
 
     /**
-     * 构造一个 RPC 服务提供方
+     * 构造一个 {@code RpcServer} 对外提供 RPC 服务。
      *
-     * @param port 监听端口
-     * @param socketConfiguration Socket 配置信息，允许为 {@code null}，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
-     * @param maximumPoolSize 用于执行 RPC 服务调用请求的线程池最大数量
-     * @param compressionThreshold 最小压缩字节数，当 数据包 body 字节数小于或等于该值，不进行压缩，不能小于等于0
-     * @param rpcExecuteListener RPC 服务执行监听器
+     * @param port {@code RpcServer} 开启的 {@code Socket} 监听端口，不能小于等于 0
+     * @param socketConfiguration 创建 {@code RpcChannel} 使用的 {@link Socket} 配置信息，允许为 {@code null}
+     * @param compressionThreshold 创建 {@code AsyncJdkRpcExecutor} 使用的最小压缩字节数，不能小于等于 0
+     * @param slowExecutionThreshold 创建 {@code AsyncJdkRpcExecutor} 使用的 RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0
+     * @param rpcExecutorListener 创建 {@code AsyncJdkRpcExecutor} 使用的 {@link RpcExecutor} 事件监听器，允许为 {@code null}
+     * @param maximumPoolSize 创建 {@code AsyncJdkRpcExecutor} 使用的线程池最大数量，不能小于等于 0
+     * @throws IllegalArgumentException 如果 {@code RpcServer} 开启的 {@code Socket} 监听端口小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果创建 {@code AsyncJdkRpcExecutor} 使用的最小压缩字节数小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果创建 {@code AsyncJdkRpcExecutor} 使用的 RPC 执行过慢最小时间小于等于 0，将会抛出此异常
+     * @throws IllegalArgumentException 如果创建 {@code AsyncJdkRpcExecutor} 使用的线程池最大数量小于等于 0，将会抛出此异常
+     * @see AsyncJdkRpcExecutor
      */
-    public RpcServer(int port, SocketConfiguration socketConfiguration, int maximumPoolSize, int compressionThreshold,
-                     RpcExecuteListener rpcExecuteListener) {
+    public RpcServer(int port, SocketConfiguration socketConfiguration, int compressionThreshold, int slowExecutionThreshold,
+                     RpcExecutorListener rpcExecutorListener, int maximumPoolSize) throws IllegalArgumentException {
+        if (port <= 0) {
+            LOG.error("Create RpcServer failed: `port could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+            throw new IllegalArgumentException("Create RpcServer failed: `port could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+        }
+        if (compressionThreshold <= 0) {
+            LOG.error("Create RpcServer failed: `compressionThreshold could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+            throw new IllegalArgumentException("Create RpcServer failed: `compressionThreshold could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+        }
+        if (slowExecutionThreshold <= 0) {
+            LOG.error("Create RpcServer failed: `slowExecutionThreshold could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+            throw new IllegalArgumentException("Create RpcServer failed: `slowExecutionThreshold could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+        }
+        if (maximumPoolSize <= 0) {
+            LOG.error("Create RpcServer failed: `maximumPoolSize could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+            throw new IllegalArgumentException("Create RpcServer failed: `maximumPoolSize could not be equal or less than 0`. Port: `" + port
+                    + "`. SocketConfiguration: `" + socketConfiguration + "`. CompressionThreshold: `"
+                    + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
+                    + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
+        }
         this.port = port;
         this.socketConfiguration = socketConfiguration;
-        this.rpcExecutor = new AsyncJdkRpcExecutor(port, maximumPoolSize, compressionThreshold, rpcExecuteListener);
+        this.rpcExecutor = new AsyncJdkRpcExecutor(port, compressionThreshold, slowExecutionThreshold, rpcExecutorListener, maximumPoolSize);
     }
 
     /**
-     * 注册一个 RPC 服务实例，注册完成后，该实例所实现的接口方法就可以通过 RPC 的形式提供给 RPC 调用方调用
-     * <p>注意：注册的实例必须继承 1 个或 1 个以上个数的接口，RPC 服务通常以接口的方式提供给 RPC 调用方调用</p>
+     * 在 {@code RpcServer} 注册一个 RPC 服务，服务注册完成后，才可对外提供服务。
+     * <p><strong>注意：</strong> RPC 服务以接口的形式提供给调用方使用，注册的 RPC 服务必须继承至少 1 个接口。</p>
      *
-     * @param service 注册的 RPC 服务实例
-     * @throws IllegalArgumentException 如果注册的 RPC 服务实例未继承任何接口
+     * @param service 需要对外提供的 RPC 服务
+     * @throws IllegalArgumentException 如果注册的 RPC 服务未继承任何接口，将会抛出此异常
      */
     public void register(Object service) throws IllegalArgumentException {
         rpcExecutor.register(service);
     }
 
     /**
-     * 执行下线操作，当前 RPC 服务提供方不再接受新的 RPC 客户端连接请求，并给已建立的客户端发送离线消息，
-     * 收到离线消息的客户端将不再发送新的消息请求，并在 1 分钟后关闭。
-     * <p>该方法通常在应用关闭前调用，正在执行中的请求不会因为 RPC 客户端突然关闭导致失败</p>
+     * {@code RpcServer} 执行下线操作，防止正在执行中的 RPC 调用失败，在下线完成一段时间后，再调用 {@link #close()} 方法进行资源释放，该方法不会抛出任何异常。
      */
     public synchronized void offline() {
         long startTime = System.currentTimeMillis();
@@ -139,14 +199,14 @@ public class RpcServer implements Closeable {
                     RPC_CONNECTION_LOG.info("RpcServer has been offline. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
                             (System.currentTimeMillis() - startTime), port, socketConfiguration);
                 } catch (Exception e) {
-                    LOG.error("Offline RpcServer failed. Unexpected error. Port: `" + port + "`.", e);
+                    LOG.error("Offline RpcServer failed: `unexpected error`. Port: `" + port + "`.", e);
                 }
             }
         }
     }
 
     /**
-     * 执行 RPC 服务提供方初始化操作，仅在初始化完成后，才能提供服务
+     * 执行 {@code RpcServer} 初始化操作，在初始化完成后，重复执行该方法不会产生任何效果。
      */
     public synchronized void init() {
         if (state == BeanStatusEnum.UNINITIALIZED) {
@@ -159,7 +219,7 @@ public class RpcServer implements Closeable {
                 RPC_CONNECTION_LOG.info("RpcServer has been initialized. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
                         (System.currentTimeMillis() - startTime), port, socketConfiguration);
             } catch (Exception e) {
-                LOG.error("Initialize RpcServer failed. Unexpected error. Port: `" + port + "`.", e);
+                LOG.error("Initialize RpcServer failed: `unexpected error`. Port: `" + port + "`.", e);
                 close();
             }
         }
@@ -180,9 +240,19 @@ public class RpcServer implements Closeable {
                 RPC_CONNECTION_LOG.info("RpcServer has been closed. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
                         (System.currentTimeMillis() - startTime), port, socketConfiguration);
             } catch (Exception e) {
-                LOG.error("Close RpcServer failed. Unexpected error. Port: `" + port + "`.", e);
+                LOG.error("Close RpcServer failed: `unexpected error`. Port: `" + port + "`.", e);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "RpcServer{" +
+                "state=" + state +
+                ", port=" + port +
+                ", socketConfiguration=" + socketConfiguration +
+                ", rpcExecutor=" + rpcExecutor +
+                '}';
     }
 
     private class RpcServerTask extends Thread {
@@ -208,15 +278,19 @@ public class RpcServer implements Closeable {
                     }
                 } catch (SocketException e) {
                     //do nothing
-                } catch (Exception e) {
+                } catch (Exception e) { //should not happen
                     LOG.error("Accept RpcChannel failed. Port: `" + port + "`.", e);
                 }
             }
         }
 
-        private void close() throws IOException {
+        private void close() {
             this.stopSignal = true;
-            serverSocket.close();
+            try {
+                serverSocket.close();
+            } catch (Exception e) {
+                LOG.error("Close ServerSocket failed. Port: `" + port + "`.", e);
+            }
         }
 
     }
@@ -227,7 +301,7 @@ public class RpcServer implements Closeable {
         public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
             if (packet.isRequestPacket() && packet.getOpcode() == OperationCode.REMOTE_PROCEDURE_CALL) {
                 rpcExecutor.execute(channel, packet);
-            } else {
+            } else { //should not happen
                 LOG.error("Unrecognized rpc packet. Port: `{}`. Invalid packet: `{}`.", port, packet);
             }
         }

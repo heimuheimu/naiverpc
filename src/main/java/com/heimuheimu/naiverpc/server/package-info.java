@@ -23,7 +23,7 @@
  */
 
 /**
- * RPC 服务提供端相关类
+ * RPC 服务提供方可通过 {@link com.heimuheimu.naiverpc.server.RpcServer} 来对外提供 RPC 服务。
  *
  * @author heimuheimu
  */

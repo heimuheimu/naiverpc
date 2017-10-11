@@ -30,27 +30,28 @@ import com.heimuheimu.naiverpc.packet.RpcPacket;
 import java.io.Closeable;
 
 /**
- * RPC 服务调用执行器
+ * {@code RpcExecutor} 用于执行 RPC 调用方请求的 RPC 方法，并向调用方返回执行结果。
+ *
+ * <p><strong>说明：</strong>{@code RpcExecutor}的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */
 public interface RpcExecutor extends Closeable {
 
     /**
-     * 注册一个 RPC 服务实例，注册完成后，该实例所实现的接口方法就可以通过 RPC 的形式提供给 RPC 调用方调用
-     * <p>注意：注册的实例必须继承 1 个或 1 个以上个数的接口，RPC 服务通常以接口的方式提供给 RPC 调用方调用</p>
+     * 在 {@code RpcExecutor} 注册一个 RPC 服务，服务注册完成后才可执行。
+     * <p><strong>注意：</strong> RPC 服务以接口的形式提供给调用方使用，注册的 RPC 服务必须继承至少 1 个接口。</p>
      *
-     * @param service 注册的 RPC 服务实例
-     * @throws IllegalArgumentException 如果注册的 RPC 服务实例未继承任何接口
+     * @param service 需要对外提供的 RPC 服务
+     * @throws IllegalArgumentException 如果注册的 RPC 服务未继承任何接口，将会抛出此异常
      */
     void register(Object service) throws IllegalArgumentException;
 
     /**
-     * 执行 RPC 服务调用请求
+     * 执行 RPC 服务，并将执行结果通过 {@code RpcChannel} 发送给调用方，该方法不会抛出任何异常。
      *
-     * @param channel 发送 RPC 服务调用请求的客户端数据管道
-     * @param packet RPC 服务调用请求数据包
+     * @param channel 发起 RPC 服务调用的 {@code RpcChannel}
+     * @param packet RPC 服务调用请求数据
      */
     void execute(RpcChannel channel, RpcPacket packet);
-
 }

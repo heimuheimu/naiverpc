@@ -35,82 +35,89 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * RPC 服务画像
+ * RPC 服务画像。
  *
  * @author heimuheimu
  */
-public class RpcServiceDepiction {
+class RpcServiceDepiction {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RpcServiceDepiction.class);
 
 	/**
-	 * 提供服务的实例
+	 * 对外提供的 RPC 服务
 	 */
 	private final Object target;
 
 	/**
-	 * 可提供服务的接口列表
+	 * {@link #target} 继承的接口列表
 	 */
 	private final Class<?>[] interfaces;
 
 	/**
-	 * RPC 可提供的方法 Map, Key 为方法唯一标识，Value 为方法
+	 * 可执行的 RPC 方法 {@code Map}, Key 为方法唯一标识，Value 为 {@code Method}
+	 *
 	 * @see ReflectUtil#getMethodUniqueName(Method)
 	 */
 	private final HashMap<String, Method> methodMap;
 
 	/**
-	 * 根据提供服务的实例创建 RPC 服务画像
+	 * 根据对外提供的 RPC 服务生成画像。
 	 *
-	 * @param target 提供服务的实例
-	 * @throws IllegalArgumentException 如果提供服务的实例没有实现任何接口，将会抛出此异常
+	 * @param target 对外提供的 RPC 服务
+	 * @throws IllegalArgumentException 如果对外提供的 RPC 服务没有继承任何接口，将会抛出此异常
 	 */
 	public RpcServiceDepiction(Object target) throws IllegalArgumentException {
 		if (target == null) {
-			throw new IllegalArgumentException("Object could not be null.");
+			LOG.error("Create RpcServiceDepiction failed: `target could not be null`.");
+			throw new IllegalArgumentException("Create RpcServiceDepiction failed: `target could not be null`.");
 		}
 		this.target = target;
 		this.interfaces = getAllInterfaces(target.getClass()).toArray(new Class<?>[]{});
 		if (this.interfaces.length == 0) {
-			throw new IllegalArgumentException("This object represents a class that implements no interfaces: "
-					+ target);
+			LOG.error("Create RpcServiceDepiction failed: `this object represents a class that implements no interfaces`. Target: `"
+					+ target + "`.");
+			throw new IllegalArgumentException("Create RpcServiceDepiction failed: `this object represents a class that implements no interfaces`. Target: `"
+					+ target + "`.");
 		}
 		Method[] methods = target.getClass().getMethods();
 		methodMap = new HashMap<>();
 		for (Method method : methods) {
 			String key = ReflectUtil.getMethodUniqueName(method);
 			if (methodMap.containsKey(key)) {
-				LOG.error("Method `{}` is existed. It will be overridden. Target object: `{}`.",
-						method.getName(), Arrays.toString(method.getParameterTypes()), target);
+				LOG.error("Method `{}` is existed. It will be overridden. Target: `{}`.", key, target);
 			}
 			methodMap.put(key, method);
 		}
 	}
 
 	/**
-	 * 获得提供服务的实例
+	 * 获得对外提供的 RPC 服务。
 	 *
-	 * @return 提供服务的实例
+	 * @return 对外提供的 RPC 服务
 	 */
 	public Object getTarget() {
 		return target;
 	}
 
 	/**
-	 * 获得可提供服务的接口列表
+	 * 获得对外提供的 RPC 服务继承的接口列表。
 	 *
-	 * @return 可提供服务的接口列表
+	 * @return 对外提供的 RPC 服务继承的接口列表
 	 */
 	public Class<?>[] getInterfaces() {
 		return interfaces;
 	}
 
 	/**
-	 * 根据方法名、方法参数类型数组、参数数组反射执行对应的方法，并返回结果
+	 * 执行 RPC 方法，并返回执行结果。
 	 *
-	 * @param methodUniqueName 唯一方法名
-	 * @param arguments 参数数组
-	 * @return 方法返回结果
+	 * @param methodUniqueName RPC 方法名，使用 {@link ReflectUtil#getMethodUniqueName(Method)} 生成
+	 * @param arguments RPC 方法执行使用的参数数组
+	 * @return 执行结果
+	 * @throws NoSuchMethodException 如果该 RPC 方法不存在，将抛出此异常
+	 * @throws IllegalAccessException 如果没有权限执行该 RPC 方法，将抛出此异常
+	 * @throws IllegalArgumentException 如果 RPC 方法执行使用的参数数组错误，将抛出此异常
+	 * @throws InvocationTargetException 如果 RPC 方法执行过程中发生错误，将抛出此异常
 	 */
 	public Object execute(String methodUniqueName, Object[] arguments)
 			throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
@@ -118,14 +125,15 @@ public class RpcServiceDepiction {
 		if (m != null) {
 			return m.invoke(target, arguments);
 		} else {
-			throw new NoSuchMethodException("No such method. Class: `"
-					+ target.getClass().getName() + "`. Method unique name: `" + methodUniqueName
-					+ "`. Arguments: `" + Arrays.toString(arguments) + "`.");
+			LOG.error("Execute rpc method failed: `no such method`. Class: `" + target.getClass().getName()
+					+ "`. MethodUniqueName: `" + methodUniqueName + "`. Arguments: `" + Arrays.toString(arguments) + "`.");
+			throw new NoSuchMethodException("Execute rpc method failed: `no such method`. Class: `" + target.getClass().getName()
+					+ "`. MethodUniqueName: `" + methodUniqueName + "`. Arguments: `" + Arrays.toString(arguments) + "`.");
 		}
 	}
 
 	/**
-	 * 获得对象 Class 实现的所有接口数组，包含被继承的父接口
+	 * 获得对象 Class 实现的所有接口数组，包含被继承的父接口。
 	 *
 	 * @param clazz 需要查询的对象 Class
 	 * @return 对象实现的所有接口数组，包含被继承的父接口
@@ -144,5 +152,4 @@ public class RpcServiceDepiction {
 		}
 		return allInterfaceSet;
 	}
-
 }
