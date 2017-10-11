@@ -502,7 +502,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onClassNotFound(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onClassNotFound() failed. Host: `" + host + "`. Method: `"
-                        + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                        + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -514,7 +514,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onNoSuchMethod(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onNoSuchMethod() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -526,7 +526,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onIllegalArgument(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onIllegalArgument() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -538,7 +538,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onInvocationTargetError(host, method, args, errorMessage);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onInvocationTargetError() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`. Error message: `" + errorMessage + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`. Error message: `" + errorMessage + "`.", e);
                 }
             }
         }
@@ -550,7 +550,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onTimeout(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onTimeout() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -562,7 +562,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onError(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onError() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -574,7 +574,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onTooBusy(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onTooBusy() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -586,7 +586,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onClosed(host, method, args);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onClosed() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`.", e);
                 }
             }
         }
@@ -598,7 +598,7 @@ public class DirectRpcClient implements RpcClient {
                     directRpcClientListener.onSlowExecution(host, method, args, executedNanoTime);
                 } catch (Exception e) {
                     LOG.error("Call DirectRpcClientListener#onSlowExecution() failed. Host: `" + host + "`. Method: `"
-                            + method + "`. Arguments: `" + Arrays.toString(args) + "`. ExecutedNanoTime: `" + executedNanoTime + "`.");
+                            + method + "`. Arguments: `" + Arrays.toString(args) + "`. ExecutedNanoTime: `" + executedNanoTime + "`.", e);
                 }
             }
         }

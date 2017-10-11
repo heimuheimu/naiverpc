@@ -27,7 +27,7 @@ package com.heimuheimu.naiverpc.client;
 import java.lang.reflect.Method;
 
 /**
- * {@link DirectRpcClient} 事件监听器，可监听 RPC 调用时出现的异常、超时、执行过慢、RPC 服务提供方繁忙、{@code DirectRpcClient} 已关闭等事件。
+ * {@link DirectRpcClient} 事件监听器，可监听 RPC 调用时出现的异常、超时、调用过慢、RPC 服务提供方繁忙、{@code DirectRpcClient} 已关闭等事件。
  *
  * <p>
  *     <strong>说明：</strong>监听器的实现类必须是线程安全的。应优先考虑继承 {@link DirectRpcClientListenerSkeleton} 骨架类进行实现，
