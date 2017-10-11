@@ -205,7 +205,7 @@ public class RpcChannel implements Closeable {
     }
 
     /**
-     * 执行 RPC 数据通信管道初始化操作，在初始化完成后，重复执行该方法不会产生任何效果。管道是否可以进行数据通信可通过 {@link #isActive()} 方法进行判断。
+     * 执行 {@code RpcChannel} 初始化操作，在初始化完成后，重复执行该方法不会产生任何效果。管道是否可以进行数据通信可通过 {@link #isActive()} 方法进行判断。
      *
      * <p><strong>注意：</strong>该方法不会抛出任何异常，如果初始化失败，管道将被自动关闭，且不会触发 {@link RpcChannelListener#onClosed(RpcChannel)} 事件。</p>
      */
