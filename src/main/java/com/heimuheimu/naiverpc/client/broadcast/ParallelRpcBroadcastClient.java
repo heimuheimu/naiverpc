@@ -359,7 +359,6 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
                     response.setHost(host);
                     response.setCode(BroadcastResponse.CODE_INVALID_HOST);
                     responseMap.put(host, response);
-                    failedExecutedHostList.add(host);
                 }
             } else {
                 LOG.error("RPC broadcast failed: `unknown host`. Host: `" + host + "`. Method: `" + method + "`. Arguments: `"

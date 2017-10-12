@@ -62,6 +62,7 @@ public interface RpcBroadcastClientListener {
 
     /**
      * 当 RPC 调用失败时，将会触发此事件。
+     * <p><strong>注意：</strong>如果因 {@code DirectRpcClient} 关闭导致的调用失败不会触发此事件。</p>
      *
      * @param host 提供 RPC 服务的主机地址
      * @param method RPC 调用的方法
