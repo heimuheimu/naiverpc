@@ -107,7 +107,19 @@ public class RpcServer implements Closeable {
      * @see AsyncJdkRpcExecutor
      */
     public RpcServer(RpcExecutorListener rpcExecutorListener) {
-        this(4182, null, 64 * 1024, 50, rpcExecutorListener, 500);
+        this(4182, rpcExecutorListener);
+    }
+
+    /**
+     * 构造一个 {@code RpcServer} 对外提供 RPC 服务，{@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，
+     * 创建 {@code AsyncJdkRpcExecutor} 时，最小压缩字节数设置为 64 KB，RPC 执行过慢最小时间设置为 50 毫秒，使用的线程池最大数量为 500。
+     *
+     * @param port {@code RpcServer} 开启的 {@code Socket} 监听端口，不能小于等于 0
+     * @param rpcExecutorListener 创建 {@code AsyncJdkRpcExecutor} 使用的 {@link RpcExecutor} 事件监听器，允许为 {@code null}
+     * @throws IllegalArgumentException 如果 {@code RpcServer} 开启的 {@code Socket} 监听端口小于等于 0，将会抛出此异常
+     */
+    public RpcServer(int port, RpcExecutorListener rpcExecutorListener) throws IllegalArgumentException {
+        this(port, null, 64 * 1024, 50, rpcExecutorListener, 500);
     }
 
     /**
