@@ -226,6 +226,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
             } catch (Exception e) {
                 LOG.error("Decode RpcRequestMessage failed: `invalid packet`. Packet: `" + packet + "`.", e);
                 channel.send(RpcPacketBuilder.buildResponsePacket(packet, ResponseStatusCode.INTERNAL_ERROR));
+                executionMonitor.onError(RpcServerExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR);
             }
             if (rpcRequestMessage != null) {
                 long startTime = System.nanoTime();
