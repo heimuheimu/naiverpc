@@ -402,14 +402,26 @@ public class RpcClusterClient implements RpcClient {
         }
         //如果该 RPC 服务调用客户端暂时不可用，则从可用池里面随机挑选
         if (client == null) {
-            int aliveClientSize = aliveClientList.size();
-            if (aliveClientSize > 0) {
-                int aliveClientIndex = (new Random()).nextInt(aliveClientSize);
-                try {
-                    client = aliveClientList.get(aliveClientIndex);
-                } catch (IndexOutOfBoundsException e) { //should not happen
-                    LOG.error("No active DirectRpcClient due to IndexOutOfBoundsException. Index: `" + aliveClientIndex + "`. Size: `"
-                            + aliveClientList.size() + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
+            int currentRetryTimes = 0;
+            int maxRetryTimes = hosts.length;
+            while (currentRetryTimes++ < maxRetryTimes) {
+                int aliveClientSize = aliveClientList.size();
+                if (aliveClientSize > 0) {
+                    int aliveClientIndex = (new Random()).nextInt(aliveClientSize);
+                    try {
+                        client = aliveClientList.get(aliveClientIndex);
+                        if (client != null && client.isActive()) {
+                            break;
+                        }
+                    } catch (IndexOutOfBoundsException e) { //should not happen
+                        LOG.error("Choose active DirectRpcClient failed due to IndexOutOfBoundsException. Index: `" + aliveClientIndex + "`. Size: `"
+                                + aliveClientList.size() + "`. Hosts: `" + Arrays.toString(hosts) + "`.");
+                    }
+                    client = null;
+                    LOG.debug("Choose DirectRpcClient from aliveClientList failed: `DirectRpcClient is not active`. Retry times: {}.", currentRetryTimes);
+                } else {
+                    LOG.debug("There is no active DirectRpcClient: `aliveClientList is empty`.");
+                    break;
                 }
             }
 
