@@ -61,9 +61,11 @@ public class RpcProxyFactory {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            return rpcClient.execute(method, args);
+            if (method.getDeclaringClass() == Object.class) {
+                return method.invoke(this, args);
+            } else {
+                return rpcClient.execute(method, args);
+            }
         }
-
     }
-
 }
