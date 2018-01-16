@@ -26,7 +26,7 @@ package com.heimuheimu.naiverpc.monitor.server.falcon;
 
 import com.heimuheimu.naivemonitor.falcon.support.AbstractThreadPoolDataCollector;
 import com.heimuheimu.naivemonitor.monitor.ThreadPoolMonitor;
-import com.heimuheimu.naiverpc.monitor.FalconReporterConstant;
+import com.heimuheimu.naiverpc.constant.FalconDataCollectorConstant;
 import com.heimuheimu.naiverpc.monitor.server.RpcServerThreadPoolMonitorFactory;
 
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class RpcServerThreadPoolDataCollector extends AbstractThreadPoolDataColl
 
     @Override
     protected String getModuleName() {
-        return FalconReporterConstant.MODULE_NAME;
+        return FalconDataCollectorConstant.MODULE_NAME;
     }
 
     @Override
@@ -84,6 +84,6 @@ public class RpcServerThreadPoolDataCollector extends AbstractThreadPoolDataColl
 
     @Override
     public int getPeriod() {
-        return FalconReporterConstant.REPORT_PERIOD;
+        return FalconDataCollectorConstant.REPORT_PERIOD;
     }
 }

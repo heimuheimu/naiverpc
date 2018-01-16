@@ -22,26 +22,26 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.monitor;
+package com.heimuheimu.naiverpc.constant;
 
 /**
- * RPC Falcon 数据监控常量
+ * Falcon 监控数据采集器使用的常量。
  *
  * @author heimuheimu
  */
-public class FalconReporterConstant {
+public class FalconDataCollectorConstant {
 
-    private FalconReporterConstant() {
+    private FalconDataCollectorConstant() {
         //private constructor
     }
 
     /**
-     * Falcon 数据使用的模块名
+     * 当前监控数据所在的模块名称。
      */
     public static final String MODULE_NAME = "naiverpc";
 
     /**
-     * Falcon 数据上报周期
+     * 采集器执行的时间周期，单位：秒。
      */
     public static final int REPORT_PERIOD = 30;
 

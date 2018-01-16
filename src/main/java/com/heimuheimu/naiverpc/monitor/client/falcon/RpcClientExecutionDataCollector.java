@@ -26,7 +26,7 @@ package com.heimuheimu.naiverpc.monitor.client.falcon;
 
 import com.heimuheimu.naivemonitor.falcon.support.AbstractExecutionDataCollector;
 import com.heimuheimu.naivemonitor.monitor.ExecutionMonitor;
-import com.heimuheimu.naiverpc.monitor.FalconReporterConstant;
+import com.heimuheimu.naiverpc.constant.FalconDataCollectorConstant;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientExecutionMonitorFactory;
 
 import java.util.ArrayList;
@@ -97,7 +97,7 @@ public class RpcClientExecutionDataCollector extends AbstractExecutionDataCollec
 
     @Override
     protected String getModuleName() {
-        return FalconReporterConstant.MODULE_NAME;
+        return FalconDataCollectorConstant.MODULE_NAME;
     }
 
     @Override
@@ -112,6 +112,6 @@ public class RpcClientExecutionDataCollector extends AbstractExecutionDataCollec
 
     @Override
     public int getPeriod() {
-        return FalconReporterConstant.REPORT_PERIOD;
+        return FalconDataCollectorConstant.REPORT_PERIOD;
     }
 }

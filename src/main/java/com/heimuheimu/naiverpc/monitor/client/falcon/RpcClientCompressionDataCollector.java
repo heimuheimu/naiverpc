@@ -26,7 +26,7 @@ package com.heimuheimu.naiverpc.monitor.client.falcon;
 
 import com.heimuheimu.naivemonitor.falcon.support.AbstractCompressionDataCollector;
 import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
-import com.heimuheimu.naiverpc.monitor.FalconReporterConstant;
+import com.heimuheimu.naiverpc.constant.FalconDataCollectorConstant;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientCompressionMonitorFactory;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class RpcClientCompressionDataCollector extends AbstractCompressionDataCo
 
     @Override
     protected String getModuleName() {
-        return FalconReporterConstant.MODULE_NAME;
+        return FalconDataCollectorConstant.MODULE_NAME;
     }
 
     @Override
@@ -69,6 +69,6 @@ public class RpcClientCompressionDataCollector extends AbstractCompressionDataCo
 
     @Override
     public int getPeriod() {
-        return FalconReporterConstant.REPORT_PERIOD;
+        return FalconDataCollectorConstant.REPORT_PERIOD;
     }
 }

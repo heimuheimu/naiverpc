@@ -26,7 +26,7 @@ package com.heimuheimu.naiverpc.monitor.server.falcon;
 
 import com.heimuheimu.naivemonitor.falcon.support.AbstractSocketDataCollector;
 import com.heimuheimu.naivemonitor.monitor.SocketMonitor;
-import com.heimuheimu.naiverpc.monitor.FalconReporterConstant;
+import com.heimuheimu.naiverpc.constant.FalconDataCollectorConstant;
 import com.heimuheimu.naiverpc.monitor.server.RpcServerSocketMonitorFactory;
 
 import java.util.List;
@@ -72,7 +72,7 @@ public class RpcServerSocketDataCollector extends AbstractSocketDataCollector {
 
     @Override
     protected String getModuleName() {
-        return FalconReporterConstant.MODULE_NAME;
+        return FalconDataCollectorConstant.MODULE_NAME;
     }
 
     @Override
@@ -82,6 +82,6 @@ public class RpcServerSocketDataCollector extends AbstractSocketDataCollector {
 
     @Override
     public int getPeriod() {
-        return FalconReporterConstant.REPORT_PERIOD;
+        return FalconDataCollectorConstant.REPORT_PERIOD;
     }
 }
