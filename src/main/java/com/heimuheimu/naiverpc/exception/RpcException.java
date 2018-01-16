@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.exception;
 
 /**
- * RPC 服务执行过程中遇到错误，将会抛出此异常
+ * RPC 服务执行过程中遇到错误，将会抛出此异常。
  *
  * @author heimuheimu
  */

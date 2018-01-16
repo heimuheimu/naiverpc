@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.exception;
 
 /**
- * 远程请求超时时，将会抛出此异常
+ * 远程请求超时时，将会抛出此异常。
  *
  * @author heimuheimu
  */
