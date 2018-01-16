@@ -24,10 +24,10 @@
 
 package com.heimuheimu.naiverpc.client.cluster;
 
-import com.heimuheimu.naivemonitor.MonitorUtil;
 import com.heimuheimu.naivemonitor.alarm.NaiveServiceAlarm;
 import com.heimuheimu.naivemonitor.alarm.ServiceAlarmMessageNotifier;
 import com.heimuheimu.naivemonitor.alarm.ServiceContext;
+import com.heimuheimu.naivemonitor.util.MonitorUtil;
 import com.heimuheimu.naiverpc.client.DirectRpcClient;
 
 import java.util.List;
@@ -37,12 +37,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * {@code NoticeableRpcClusterClientListener} 监听集群客户端 {@link RpcClusterClient} 中 {@link DirectRpcClient} 的关闭和恢复事件，
  * 可在上述事件发生时，通过报警消息通知器进行实时通知。
+ *
  * <br><strong>注意：</strong>接收到 RPC 服务提供方发送的下线操作请求导致的关闭不会进行通知。
  *
  * <p><strong>说明：</strong>{@code NoticeableRpcClusterClientListener} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @author heimuheimu
  * @see NaiveServiceAlarm
+ * @author heimuheimu
  */
 public class NoticeableRpcClusterClientListener extends RpcClusterClientListenerSkeleton {
 

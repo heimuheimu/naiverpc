@@ -63,8 +63,8 @@ import java.util.concurrent.atomic.AtomicLongArray;
  *
  * <p><strong>说明：</strong>{@code RpcClusterClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @author heimuheimu
  * @see DirectRpcClient
+ * @author heimuheimu
  */
 public class RpcClusterClient implements RpcClient {
 
@@ -433,7 +433,7 @@ public class RpcClusterClient implements RpcClient {
     }
 
     /**
-     * 判断该位置的 RPC 服务调用客户端是否轮空本轮使用，用于保护刚恢复的客户端突然进入太多请求
+     * 判断该位置的 RPC 服务调用客户端是否轮空本轮使用，用于保护刚恢复的客户端突然进入太多请求。
      *
      * @param clientIndex RPC 服务调用客户端位置索引
      * @return 是否轮空本轮使用
@@ -457,7 +457,7 @@ public class RpcClusterClient implements RpcClient {
     }
 
     /**
-     * 启动 RPC 调用客户端重连恢复任务
+     * 启动 RPC 调用客户端重连恢复任务。
      */
     private void startRescueTask() {
         if (state == BeanStatusEnum.NORMAL) {
