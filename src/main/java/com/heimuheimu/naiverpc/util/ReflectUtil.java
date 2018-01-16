@@ -26,12 +26,18 @@ package com.heimuheimu.naiverpc.util;
 import java.lang.reflect.Method;
 
 /**
- * 反射工具类
+ * 反射工具类。
  *
  * @author heimuheimu
  */
 public class ReflectUtil {
 
+	/**
+	 * 根据 Method 实例生成一个唯一方法名。
+	 *
+	 * @param method Method 实例
+	 * @return 唯一方法名
+	 */
 	public static String getMethodUniqueName(Method method) {
 		Class<?>[] parameterTypes = method.getParameterTypes();
 		if (parameterTypes.length == 0) {
@@ -46,5 +52,4 @@ public class ReflectUtil {
 		}
 		
 	}
-	
 }

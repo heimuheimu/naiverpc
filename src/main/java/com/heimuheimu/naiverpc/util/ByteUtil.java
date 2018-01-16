@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.util;
 
 /**
- * 字节转换工具
+ * 字节转换工具类。
  *
  * @author heimuheimu
  */
@@ -36,7 +36,7 @@ public class ByteUtil {
     }
 
     /**
-     * 将 int 转换为长度为 4 的 byte 数组，并写入目标数组的指定索引位置
+     * 将 int 转换为长度为 4 的 byte 数组，并写入目标数组的指定索引位置。
      *
      * @param value 需要被转换的 int 值
      * @param src 目标数组
@@ -50,7 +50,7 @@ public class ByteUtil {
     }
 
     /**
-     * 将长度为 4 的 byte 数组转换为 int 后返回
+     * 将长度为 4 的 byte 数组转换为 int 后返回。
      *
      * @param bytes 需要被转换的 byte 数组
      * @param offset 数组起始索引
@@ -62,7 +62,7 @@ public class ByteUtil {
     }
 
     /**
-     * 将 long 转换为长度为 8 的 byte 数组，并写入目标数组的指定索引位置
+     * 将 long 转换为长度为 8 的 byte 数组，并写入目标数组的指定索引位置。
      *
      * @param value 需要被转换的 long 值
      * @param src 目标数组
@@ -80,7 +80,7 @@ public class ByteUtil {
     }
 
     /**
-     * 将长度为 8 的 byte 数组转换为 long 后返回
+     * 将长度为 8 的 byte 数组转换为 long 后返回。
      *
      * @param bytes 需要被转换的 byte 数组
      * @param offset 数组起始索引
@@ -96,5 +96,4 @@ public class ByteUtil {
                 ((bytes[offset++] & 0xff) <<  8) +
                 ((bytes[offset] & 0xff) <<  0));
     }
-
 }
