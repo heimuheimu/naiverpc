@@ -449,7 +449,7 @@ public class RpcChannel implements Closeable {
     }
 
     /**
-     * RPC 数据读取线程
+     * RPC 数据读取线程。
      */
     private class ReadTask extends Thread {
 
