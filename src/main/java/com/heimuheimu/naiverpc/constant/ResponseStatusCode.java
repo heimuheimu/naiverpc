@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.constant;
 
 /**
- * RPC 调用响应状态码
+ * RPC 调用响应状态码。
  *
  * @author heimuheimu
  */
@@ -35,18 +35,39 @@ public class ResponseStatusCode {
         //prevent create instance
     }
 
+    /**
+     * 调用成功。
+     */
     public static final byte SUCCESS = 0;
 
+    /**
+     * 服务繁忙。
+     */
     public static final byte TOO_BUSY = -1;
 
+    /**
+     * Class 未找到。
+     */
     public static final byte CLASS_NOT_FOUND = -2;
 
+    /**
+     * Method 未找到。
+     */
     public static final byte NO_SUCH_METHOD = -3;
 
+    /**
+     * 非法参数。
+     */
     public static final byte ILLEGAL_ARGUMENT = -4;
 
+    /**
+     * 方法执行异常。
+     */
     public static final byte INVOCATION_TARGET_ERROR = -5;
 
+    /**
+     * 预期外异常。
+     */
     public static final byte INTERNAL_ERROR = -100;
 
 }

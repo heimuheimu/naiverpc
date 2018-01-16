@@ -25,10 +25,10 @@
 package com.heimuheimu.naiverpc.constant;
 
 /**
- * RPC 操作代码
+ * RPC 操作代码。
  *
- * @author heimuheimu
  * @see com.heimuheimu.naiverpc.packet.RpcPacket
+ * @author heimuheimu
  */
 public class OperationCode {
 
@@ -37,17 +37,17 @@ public class OperationCode {
     }
 
     /**
-     * 远程服务调用
+     * 远程服务调用。
      */
     public static final byte REMOTE_PROCEDURE_CALL = 0;
 
     /**
-     * 心跳检测
+     * 心跳检测。
      */
     public static final byte HEARTBEAT = 1;
 
     /**
-     * 下线
+     * 下线。
      */
     public static final byte OFFLINE = 2;
 
