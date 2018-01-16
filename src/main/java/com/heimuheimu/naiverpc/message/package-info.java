@@ -23,7 +23,7 @@
  */
 
 /**
- * 提供RPC 服务调用请求消息。
+ * 提供 RPC 服务调用请求消息。
  *
  * @author heimuheimu
  */
