@@ -104,8 +104,8 @@ import java.util.Arrays;
  *
  * <p><strong>说明：</strong>{@code RpcPacket} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @author heimuheimu
  * @see RpcPacketBuilder
+ * @author heimuheimu
  */
 public class RpcPacket {
     
