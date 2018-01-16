@@ -24,12 +24,15 @@
 
 package com.heimuheimu.naiverpc.message;
 
-import java.io.*;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
- * RPC 服务调用请求消息
+ * RPC 服务调用请求消息。
  *
  * @author heimuheimu
  */
@@ -55,7 +58,7 @@ public class RpcRequestMessage implements Externalizable {
     private Object[] arguments = null;
 
     /**
-     * 获得 RPC 服务所在 Class 名称
+     * 获得 RPC 服务所在 Class 名称。
      *
      * @return RPC 服务所在 Class 名称
      */
@@ -64,7 +67,7 @@ public class RpcRequestMessage implements Externalizable {
     }
 
     /**
-     * 设置 RPC 服务所在 Class 名称
+     * 设置 RPC 服务所在 Class 名称。
      *
      * @param targetClass RPC 服务所在 Class 名称
      */
@@ -73,7 +76,7 @@ public class RpcRequestMessage implements Externalizable {
     }
 
     /**
-     * 获得 RPC 服务 Method 名称，由方法名和参数类型组合构成
+     * 获得 RPC 服务 Method 名称，由方法名和参数类型组合构成。
      *
      * @return RPC 服务 Method 名称，由方法名和参数类型组合构成
      * @see com.heimuheimu.naiverpc.util.ReflectUtil#getMethodUniqueName(Method)
@@ -83,7 +86,7 @@ public class RpcRequestMessage implements Externalizable {
     }
 
     /**
-     * 设置 RPC 服务 Method 名称，由方法名和参数类型组合构成
+     * 设置 RPC 服务 Method 名称，由方法名和参数类型组合构成。
      *
      * @param methodUniqueName RPC 服务 Method 名称，由方法名和参数类型组合构成
      * @see com.heimuheimu.naiverpc.util.ReflectUtil#getMethodUniqueName(Method)
@@ -93,7 +96,7 @@ public class RpcRequestMessage implements Externalizable {
     }
 
     /**
-     * 获得 RPC 服务调用所使用的参数数组
+     * 获得 RPC 服务调用所使用的参数数组。
      *
      * @return RPC 服务调用所使用的参数数组
      */
@@ -102,7 +105,7 @@ public class RpcRequestMessage implements Externalizable {
     }
 
     /**
-     * 设置 RPC 服务调用所使用的参数数组
+     * 设置 RPC 服务调用所使用的参数数组。
      *
      * @param arguments RPC 服务调用所使用的参数数组
      */
