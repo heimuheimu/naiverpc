@@ -40,6 +40,7 @@ public interface RpcExecutor extends Closeable {
 
     /**
      * 在 {@code RpcExecutor} 注册一个 RPC 服务，服务注册完成后才可执行。
+     *
      * <p><strong>注意：</strong> RPC 服务以接口的形式提供给调用方使用，注册的 RPC 服务必须继承至少 1 个接口。</p>
      *
      * @param service 需要对外提供的 RPC 服务
