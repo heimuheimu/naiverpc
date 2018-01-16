@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * RPC 客户端使用的 Socket 信息监控工厂类
+ * RPC 客户端使用的 Socket 信息监控工厂类。
  *
  * @author heimuheimu
  */
@@ -46,7 +46,7 @@ public class RpcClientSocketMonitorFactory {
     private static final Object lock = new Object();
 
     /**
-     * 根据 Socket 连接目标地址获得对应的 Socket 信息监控器，该方法不会返回 {@code null}
+     * 根据 Socket 连接目标地址获得对应的 Socket 信息监控器，该方法不会返回 {@code null}。
      *
      * @param host Socket 连接目标地址
      * @return Socket 连接目标地址获得对应的 Socket 信息监控器，该方法不会返回 {@code null}
@@ -66,7 +66,7 @@ public class RpcClientSocketMonitorFactory {
     }
 
     /**
-     * 获得当前 Socket 信息监控工厂管理的所有 Socket 信息监控列表
+     * 获得当前 Socket 信息监控工厂管理的所有 Socket 信息监控列表。
      *
      * @return 当前 Socket 信息监控工厂管理的所有 Socket 信息监控列表
      */

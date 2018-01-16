@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * RPC 服务端使用的线程池信息监控工厂类
+ * RPC 服务端使用的线程池信息监控工厂类。
  *
  * @author heimuheimu
  */
@@ -46,7 +46,7 @@ public class RpcServerThreadPoolMonitorFactory {
     private static final Object lock = new Object();
 
     /**
-     * 根据 RPC 服务端监听端口，获得对应的线程池信息监控器，该方法不会返回 {@code null}
+     * 根据 RPC 服务端监听端口，获得对应的线程池信息监控器，该方法不会返回 {@code null}。
      *
      * @param listenPort RPC 服务端监听端口
      * @return RPC 服务端监听端口对应的线程池信息监控器，该方法不会返回 {@code null}
@@ -66,7 +66,7 @@ public class RpcServerThreadPoolMonitorFactory {
     }
 
     /**
-     * 获得当前 RPC 服务端使用的线程池信息监控工厂管理的所有线程池信息监控列表
+     * 获得当前 RPC 服务端使用的线程池信息监控工厂管理的所有线程池信息监控列表。
      *
      * @return 当前线程池信息监控工厂管理的所有线程池信息监控列表
      */

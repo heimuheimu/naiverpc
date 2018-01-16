@@ -33,7 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RPC 客户端使用的压缩信息采集器
+ * RPC 客户端使用的压缩信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
+ * <ul>
+ *     <li>naiverpc_client_compression_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内压缩操作已节省的字节数</li>
+ *     <li>naiverpc_client_compression_avg_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内平均每次压缩操作节省的字节数</li>
+ * </ul>
  *
  * @author heimuheimu
  */
@@ -44,7 +48,7 @@ public class RpcClientCompressionDataCollector extends AbstractCompressionDataCo
     private final List<CompressionMonitor> compressionMonitorList;
 
     /**
-     * 构造一个 RPC 客户端使用的压缩信息采集器，将会采集 RPC 客户端所有的压缩信息
+     * 构造一个 RPC 客户端使用的压缩信息采集器，将会采集 RPC 客户端所有的压缩信息。
      */
     public RpcClientCompressionDataCollector() {
         this.collectorName = "client";

@@ -27,7 +27,7 @@ package com.heimuheimu.naiverpc.monitor.server;
 import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
 
 /**
- * RPC 服务端使用的压缩信息监控器工厂类
+ * RPC 服务端使用的压缩信息监控器工厂类。
  *
  * @author heimuheimu
  */
@@ -40,7 +40,7 @@ public class RpcServerCompressionMonitorFactory {
     private static final CompressionMonitor SERVER_COMPRESSION_MONITOR = new CompressionMonitor();
 
     /**
-     * 获得 RPC 客户端使用的线程池信息监控器
+     * 获得 RPC 客户端使用的线程池信息监控器。
      */
     public static CompressionMonitor get() {
         return SERVER_COMPRESSION_MONITOR;

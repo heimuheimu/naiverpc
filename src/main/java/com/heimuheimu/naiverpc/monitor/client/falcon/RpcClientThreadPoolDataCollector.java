@@ -33,7 +33,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RPC 客户端使用的线程池信息采集器
+ * RPC 客户端使用的线程池信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
+ * 
+ * <ul>
+ *     <li>naiverpc_client_threadPool_rejected_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内所有线程池拒绝执行的任务总数</li>
+ *     <li>naiverpc_client_threadPool_active_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池活跃线程数近似值总和</li>
+ *     <li>naiverpc_client_threadPool_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池线程数总和</li>
+ *     <li>naiverpc_client_threadPool_peak_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池出现过的最大线程数总和</li>
+ *     <li>naiverpc_client_threadPool_core_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的核心线程数总和</li>
+ *     <li>naiverpc_client_threadPool_maximum_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的最大线程数总和</li>
+ * </ul>
  *
  * @author heimuheimu
  */
@@ -44,7 +53,7 @@ public class RpcClientThreadPoolDataCollector extends AbstractThreadPoolDataColl
     private final List<ThreadPoolMonitor> threadPoolMonitorList;
 
     /**
-     * 构造一个 RPC 客户端使用的线程池信息采集器，将会采集 RPC 客户端使用的所有线程池信息
+     * 构造一个 RPC 客户端使用的线程池信息采集器，将会采集 RPC 客户端使用的所有线程池信息。
      */
     public RpcClientThreadPoolDataCollector() {
         this.collectorName = "client";

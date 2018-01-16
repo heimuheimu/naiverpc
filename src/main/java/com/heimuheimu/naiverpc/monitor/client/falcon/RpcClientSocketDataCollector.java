@@ -33,7 +33,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RPC 客户端使用的 Socket 信息采集器
+ * RPC 客户端使用的 Socket 信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
+ * 
+ * <ul>
+ *     <li>naiverpc_client_{groupName}_socket_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 读取的总字节数</li>
+ *     <li>naiverpc_client_{groupName}_socket_avg_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次读取的平均字节数</li>
+ *     <li>naiverpc_client_{groupName}_socket_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 写入的总字节数</li>
+ *     <li>naiverpc_client_{groupName}_socket_avg_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次写入的平均字节数</li>
+ * </ul>
  *
  * @author heimuheimu
  */
@@ -44,7 +51,7 @@ public class RpcClientSocketDataCollector extends AbstractSocketDataCollector {
     private final List<SocketMonitor> socketMonitorList;
 
     /**
-     * 构造一个 RPC 客户端使用的 Socket 信息采集器，将会采集 RPC 客户端使用的所有 Socket 信息
+     * 构造一个 RPC 客户端使用的 Socket 信息采集器，将会采集 RPC 客户端使用的所有 Socket 信息。
      */
     public RpcClientSocketDataCollector() {
         this.collectorName = "client";
@@ -52,7 +59,7 @@ public class RpcClientSocketDataCollector extends AbstractSocketDataCollector {
     }
 
     /**
-     * 构造一个 RPC 客户端使用的 Socket 信息采集器，仅采集指定连接地址的 Socket 信息
+     * 构造一个 RPC 客户端使用的 Socket 信息采集器，仅采集指定连接地址的 Socket 信息。
      *
      * @param groupName 采集的 Socket 组名称，Collector 的 name 为 client_${groupName}
      * @param hosts 需要监控的连接地址列表，以 "," 进行分割，例如："localhost:4182,localhost:4183,localhost:4184..."
@@ -62,7 +69,7 @@ public class RpcClientSocketDataCollector extends AbstractSocketDataCollector {
     }
 
     /**
-     * 构造一个 RPC 客户端使用的 Socket 信息采集器，仅采集指定连接地址的 Socket 信息
+     * 构造一个 RPC 客户端使用的 Socket 信息采集器，仅采集指定连接地址的 Socket 信息。
      *
      * @param groupName 采集的 Socket 组名称，Collector 的 name 为 client_${groupName}
      * @param hosts 需要监控的连接地址列表

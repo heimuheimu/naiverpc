@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * RPC 客户端使用的操作执行信息监控工厂类
+ * RPC 客户端使用的操作执行信息监控工厂类。
  *
  * @author heimuheimu
  */
@@ -61,7 +61,7 @@ public class RpcClientExecutionMonitorFactory {
     public static final int ERROR_CODE_INVOCATION_ERROR = -3;
 
     /**
-     * 根据 Socket 连接目标地址获得对应的操作执行信息监控器，该方法不会返回 {@code null}
+     * 根据 Socket 连接目标地址获得对应的操作执行信息监控器，该方法不会返回 {@code null}。
      *
      * @param host Socket 连接目标地址
      * @return Socket 连接目标地址获得对应的操作执行信息监控器，该方法不会返回 {@code null}
@@ -81,7 +81,7 @@ public class RpcClientExecutionMonitorFactory {
     }
 
     /**
-     * 获得当前 RPC 客户端使用的操作执行信息监控工厂管理的所有操作执行信息监控列表
+     * 获得当前 RPC 客户端使用的操作执行信息监控工厂管理的所有操作执行信息监控列表。
      *
      * @return 当前操作执行信息监控工厂管理的所有操作执行信息监控列表
      */

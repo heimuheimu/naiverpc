@@ -32,7 +32,14 @@ import com.heimuheimu.naiverpc.monitor.server.RpcServerSocketMonitorFactory;
 import java.util.List;
 
 /**
- * RPC 服务端使用的 Socket 信息采集器
+ * RPC 服务端使用的 Socket 信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
+ *
+ * <ul>
+ *     <li>naiverpc_server_socket_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 读取的总字节数</li>
+ *     <li>naiverpc_server_socket_avg_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次读取的平均字节数</li>
+ *     <li>naiverpc_server_socket_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 写入的总字节数</li>
+ *     <li>naiverpc_server_socket_avg_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次写入的平均字节数</li>
+ * </ul>
  *
  * @author heimuheimu
  */
@@ -43,7 +50,7 @@ public class RpcServerSocketDataCollector extends AbstractSocketDataCollector {
     private final int listenPort;
 
     /**
-     * 构造一个 RPC 服务端使用的 Socket 信息采集器，将会采集 RPC 服务端使用的所有 Socket 信息
+     * 构造一个 RPC 服务端使用的 Socket 信息采集器，将会采集 RPC 服务端使用的所有 Socket 信息。
      */
     public RpcServerSocketDataCollector() {
         this.collectorName = "server";
@@ -51,7 +58,7 @@ public class RpcServerSocketDataCollector extends AbstractSocketDataCollector {
     }
 
     /**
-     * 构造一个 RPC 服务端使用的 Socket 信息采集器，仅采集仅采集指定监听端口的 RPC 服务端使用的 Socket 信息
+     * 构造一个 RPC 服务端使用的 Socket 信息采集器，仅采集仅采集指定监听端口的 RPC 服务端使用的 Socket 信息。
      *
      * @param serverName 该监听端口对应的 RPC 服务名称，Collector 的 name 为 server_${serverName}
      * @param listenPort RPC 服务监听端口

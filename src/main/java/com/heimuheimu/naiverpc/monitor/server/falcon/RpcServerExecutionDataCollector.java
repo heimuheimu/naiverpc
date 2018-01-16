@@ -35,7 +35,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * RPC 服务端使用的执行信息采集器
+ * RPC 服务端使用的执行信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
+ *
+ * <ul>
+ *     <li>naiverpc_server_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生异常的错误次数</li>
+ *     <li>naiverpc_server_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数</li>
+ *     <li>naiverpc_server_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数</li>
+ *     <li>naiverpc_server_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行平均执行时间</li>
+ *     <li>naiverpc_server_max_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行最大执行时间</li>
+ * </ul>
  *
  * @author heimuheimu
  */
@@ -53,7 +61,7 @@ public class RpcServerExecutionDataCollector extends AbstractExecutionDataCollec
     private final List<ExecutionMonitor> executionMonitorList;
 
     /**
-     * 构造一个 RPC 服务端使用的执行信息采集器，将会采集所有 RPC 服务端的执行信息信息
+     * 构造一个 RPC 服务端使用的执行信息采集器，将会采集所有 RPC 服务端的执行信息信息。
      */
     public RpcServerExecutionDataCollector() {
         this.collectorName = "server";
@@ -61,7 +69,7 @@ public class RpcServerExecutionDataCollector extends AbstractExecutionDataCollec
     }
 
     /**
-     * 构造一个 RPC 服务端使用的执行信息采集器，仅采集指定监听端口的 RPC 服务端执行信息
+     * 构造一个 RPC 服务端使用的执行信息采集器，仅采集指定监听端口的 RPC 服务端执行信息。
      *
      * @param serverName 该监听端口对应的 RPC 服务名称，Collector 的 name 为 server_${serverName}
      * @param listenPort RPC 服务监听端口

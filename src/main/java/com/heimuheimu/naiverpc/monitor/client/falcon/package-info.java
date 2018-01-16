@@ -22,28 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.monitor.client;
-
-import com.heimuheimu.naivemonitor.monitor.ThreadPoolMonitor;
-
 /**
- * RPC 客户端使用的线程池信息监控器工厂类。
+ * 提供 RPC 客户端 Falcon 监控数据采集器。
  *
  * @author heimuheimu
  */
-public class RpcClientThreadPoolMonitorFactory {
-
-    private RpcClientThreadPoolMonitorFactory() {
-        //private constructor
-    }
-
-    private static final ThreadPoolMonitor CLIENT_THREAD_POOL_MONITOR = new ThreadPoolMonitor();
-
-    /**
-     * 获得 RPC 客户端使用的线程池信息监控器。
-     */
-    public static ThreadPoolMonitor get() {
-        return CLIENT_THREAD_POOL_MONITOR;
-    }
-
-}
+package com.heimuheimu.naiverpc.monitor.client.falcon;
