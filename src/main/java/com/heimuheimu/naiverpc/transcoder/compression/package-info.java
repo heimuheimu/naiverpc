@@ -22,25 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.transcoder.serialization;
-
 /**
- * 序列化类型常量类。
+ * 提供字节数组压缩、解压功能。
  *
  * @author heimuheimu
  */
-public class SerializationType {
-
-    private SerializationType() {
-        //prevent create instance
-    }
-
-    /**
-     * Java 自带的序列化方式。
-     *
-     * @see java.io.Serializable
-     * @see java.io.Externalizable
-     */
-    public static final byte JAVA = 1;
-
-}
+package com.heimuheimu.naiverpc.transcoder.compression;

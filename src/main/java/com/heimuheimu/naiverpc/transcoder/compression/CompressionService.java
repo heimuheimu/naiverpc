@@ -25,16 +25,16 @@
 package com.heimuheimu.naiverpc.transcoder.compression;
 
 /**
- * 提供字节数组的压缩、解压服务
- * <p>实现类需保证实现是线程安全的</p>
+ * 提供字节数组的压缩、解压服务。
+ *
+ * <p><strong>说明：</strong> {@code CompressionService} 的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public interface CompressionService {
 
     /**
-     * 压缩字节数组，并返回压缩后的字节数组
+     * 压缩字节数组，并返回压缩后的字节数组。
      *
      * @param src 被压缩的字节数组
      * @return 已压缩的字节数组
@@ -43,7 +43,7 @@ public interface CompressionService {
     byte[] compress(byte[] src) throws Exception;
 
     /**
-     * 解压字节数组，并返回解压后的字节数组
+     * 解压字节数组，并返回解压后的字节数组。
      *
      * @param compressedBytes 已压缩的字节数组
      * @return 解压后的字节数组

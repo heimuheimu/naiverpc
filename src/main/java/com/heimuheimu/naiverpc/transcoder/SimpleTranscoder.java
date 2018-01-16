@@ -33,10 +33,11 @@ import com.heimuheimu.naiverpc.transcoder.serialization.SerializationService;
 import com.heimuheimu.naiverpc.transcoder.serialization.SerializationType;
 
 /**
- * Java 对象与字节数组转换器
+ * Java 对象与字节数组的转换器。
+ *
+ * <p><strong>说明：</strong>{@code SimpleTranscoder} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public class SimpleTranscoder implements Transcoder {
 
@@ -60,6 +61,12 @@ public class SimpleTranscoder implements Transcoder {
      */
     private final CompressionMonitor compressionMonitor;
 
+    /**
+     * 构造一个 Java 对象与字节数组的转换器。
+     *
+     * @param compressionThreshold 最小压缩字节数，不能小于等于 0
+     * @param compressionMonitor 压缩信息监控器
+     */
     public SimpleTranscoder(int compressionThreshold, CompressionMonitor compressionMonitor) {
         this.compressionThreshold = compressionThreshold;
         this.compressionMonitor = compressionMonitor;

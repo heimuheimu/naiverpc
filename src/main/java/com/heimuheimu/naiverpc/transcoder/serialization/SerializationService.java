@@ -25,16 +25,17 @@
 package com.heimuheimu.naiverpc.transcoder.serialization;
 
 /**
- * 提供 Java 对象序列化、反序列化服务
- * <p>实现类需保证实现是线程安全的</p>
+ * 提供 Java 对象序列化、反序列化服务。
+ *
+ * <p><strong>说明：</strong> {@code SerializationService} 的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
- * @ThreadSafe
  */
 public interface SerializationService {
 
     /**
-     * 执行 Java 对象序列化操作，将 Java 对象编码成字节数组后返回
+     * 执行 Java 对象序列化操作，将 Java 对象编码成字节数组后返回。
+     *
      * <p><b>注意：</b>实现类需支持 {@code null} 的序列化操作</p>
      *
      * @param value 需要执行序列化操作的 Java 对象，允许为 {@code null}
@@ -44,7 +45,7 @@ public interface SerializationService {
     byte[] encode(Object value) throws Exception;
 
     /**
-     * 执行 Java 对象反序列化操作，将字节数组还原成 Java 对象后返回
+     * 执行 Java 对象反序列化操作，将字节数组还原成 Java 对象后返回。
      *
      * @param encodedBytes 编码后的字节数组
      * @return 还原后的 Java 对象

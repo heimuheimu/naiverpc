@@ -27,7 +27,9 @@ package com.heimuheimu.naiverpc.transcoder.serialization;
 import java.io.*;
 
 /**
- * 使用 Java 自带的序列化方式提供序列化、反序列化操作，更多信息可参考 {@link java.io.Serializable} 和 {@link java.io.Externalizable}
+ * 使用 Java 自带的序列化方式提供序列化、反序列化操作，更多信息可参考 {@link java.io.Serializable} 和 {@link java.io.Externalizable}。
+ *
+ * <p><strong>说明：</strong>{@code JavaSerializationService} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
  */
@@ -47,5 +49,4 @@ public class JavaSerializationService implements SerializationService {
         ObjectInputStream ois = new ObjectInputStream(bis);
         return ois.readObject();
     }
-
 }

@@ -55,5 +55,4 @@ public interface Transcoder {
      * @throws Exception 解码过程中发生错误
      */
     <T> T decode(byte[] encodedValue, byte serializationType, byte compressionType) throws Exception;
-
 }

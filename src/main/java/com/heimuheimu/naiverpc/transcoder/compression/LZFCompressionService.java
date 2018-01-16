@@ -28,13 +28,14 @@ import com.ning.compress.lzf.LZFEncoder;
 import com.ning.compress.lzf.LZFException;
 
 /**
- * LZF 压缩、解压实现，更多信息可参考：
+ * LZF 压缩、解压实现。更多信息可参考：
  * <p>
  *     <a href="https://github.com/ning/compress">https://github.com/ning/compress</a>
  * </p>
  *
+ * <p><strong>说明：</strong>{@code LZFCompressionService} 类是线程安全的，可在多个线程中使用同一个实例。</p>
+ *
  * @author heimuheimu
- * @ThreadSafe
  */
 public class LZFCompressionService implements CompressionService {
 

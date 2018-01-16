@@ -25,7 +25,7 @@
 package com.heimuheimu.naiverpc.transcoder.compression;
 
 /**
- * 压缩类型
+ * 压缩类型常量类。
  *
  * @author heimuheimu
  */
@@ -36,12 +36,13 @@ public class CompressionType {
     }
 
     /**
-     * 未采用压缩算法进行压缩
+     * 未采用压缩算法进行压缩。
      */
     public static final byte NONE = 0;
 
     /**
-     * 使用 LZF 进行压缩、解压
+     * 使用 LZF 进行压缩、解压。
+     *
      * @see LZFCompressionService
      */
     public static final byte LZF = 1;
