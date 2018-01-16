@@ -22,41 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.spring.client;
-
-import com.heimuheimu.naiverpc.client.RpcClient;
-import com.heimuheimu.naiverpc.client.RpcProxyFactory;
-import org.springframework.beans.factory.FactoryBean;
-
 /**
- * RPC 远程调用代理实例生成 Spring 工厂。
+ * 提供基于 Spring 框架实现的非入侵 RPC 服务提供方实现。
  *
  * @author heimuheimu
  */
-public class RpcProxyFactoryBean<T> implements FactoryBean<T> {
-
-    private final Class<T> clz;
-
-    private final T target;
-
-    public RpcProxyFactoryBean(Class<T> clz, RpcClient rpcClient) {
-        this.clz = clz;
-        this.target = RpcProxyFactory.build(clz, rpcClient);
-    }
-
-    @Override
-    public T getObject() throws Exception {
-        return target;
-    }
-
-    @Override
-    public Class<?> getObjectType() {
-        return clz;
-    }
-
-    @Override
-    public boolean isSingleton() {
-        return true;
-    }
-
-}
+package com.heimuheimu.naiverpc.spring.server;

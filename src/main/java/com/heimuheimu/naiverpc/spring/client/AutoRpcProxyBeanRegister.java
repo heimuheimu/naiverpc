@@ -40,8 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 自动扫描指定包下的所有和接口名字正则匹配规则匹配的接口，生成接口对应的 RPC 远程调用代理实例，
- * 并将该代理实例在 Spring 工厂中进行注册
+ * 自动扫描指定包下的所有和接口名字正则匹配的接口，生成接口对应的 RPC 远程调用代理实例，并将该代理实例在 Spring 工厂中进行注册。
  *
  * @author heimuheimu
  */

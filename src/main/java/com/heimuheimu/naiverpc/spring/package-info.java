@@ -23,7 +23,7 @@
  */
 
 /**
- * 与 Spring 框架更方便的集成、使用
+ * 提供基于 Spring 框架实现的非入侵 RPC 实现。
  *
  * @author heimuheimu
  */

@@ -38,12 +38,21 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 接口查找器，查找指定包下面的所有接口列表
+ * 接口查找器，查找指定包下面的所有满足条件的接口列表。
  *
  * @author heimuheimu
  */
 public class InterfaceFinder {
 
+	/**
+	 * 查找指定包（包含子包）下面的所有满足条件的接口列表。
+	 *
+	 * @param basePackage 查找的包路径，包含子包
+	 * @param classNameRegex 类名称正则表达式
+	 * @return 接口列表，不会返回 {@code null}
+	 * @throws IOException 如果查找过程中出现 IO 错误，将抛出此异常
+	 * @throws ClassNotFoundException 如果类无法找到，将抛出此异常
+	 */
 	public List<Class<?>> find(String basePackage, String classNameRegex) throws IOException,
 			ClassNotFoundException {
 		if (basePackage == null || basePackage.isEmpty()) { //如果包名为空，则不进行查找

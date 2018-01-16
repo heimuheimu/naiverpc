@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 自动扫描指定包下的所有和接口名字正则匹配规则匹配的接口，并在 Spring 工厂中寻找对应的实现类，将其注册为 RPC 服务实例
+ * 自动扫描指定包下的所有和接口名字正则匹配的接口，并在 Spring 工厂中寻找对应的实现类，将其注册为 RPC 服务实例。
  *
  * @author heimuheimu
  */
@@ -62,6 +62,7 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
 
     /**
      * 接口名字正则匹配规则，如果为空，则匹配所有名字
+     *
      * @see #basePackages
      */
     private final String classNameRegex;
