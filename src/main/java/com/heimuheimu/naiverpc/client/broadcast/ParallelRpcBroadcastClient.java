@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * 可通过 {@link RpcClientThreadPoolMonitorFactory} 获取并行执行 RPC 调用请求使用的线程池监控数据。
  * </blockquote>
  *
- * <p><strong>说明：</strong> {@code ParallelRpcBroadcastClient } 类是线程安全的，可在多个线程中使用同一个实例。</p>
+ * <p><strong>说明：</strong> {@code ParallelRpcBroadcastClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
  */
@@ -496,7 +496,7 @@ public class ParallelRpcBroadcastClient implements RpcBroadcastClient {
     }
 
     /**
-     * 启动 RPC 调用客户端重连恢复任务
+     * 启动 RPC 调用客户端重连恢复任务。
      */
     private void startRescueTask() {
         if (state == BeanStatusEnum.NORMAL) {

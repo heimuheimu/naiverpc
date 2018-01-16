@@ -32,7 +32,7 @@ import java.util.Map;
  * RPC 服务调用方使用的广播客户端，RPC 调用请求会发送至 {@code RpcBroadcastClient} 中的多个 RPC 服务提供方进行执行，并返回结果 {@code Map}，
  * {@code Map} 的 Key 为 RPC 服务提供方主机地址，Value 为 {@link BroadcastResponse}。
  *
- * <p><strong>说明：</strong> {@code RpcBroadcastClient } 的实现类必须是线程安全的。</p>
+ * <p><strong>说明：</strong> {@code RpcBroadcastClient} 的实现类必须是线程安全的。</p>
  *
  * @author heimuheimu
  */

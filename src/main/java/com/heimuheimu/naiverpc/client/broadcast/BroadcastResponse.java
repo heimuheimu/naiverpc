@@ -86,7 +86,7 @@ public class BroadcastResponse {
     private Exception exception = null;
 
     /**
-     * 获得提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * 获得提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182。
      *
      * @return 提供 RPC 服务的主机地址
      */
@@ -95,7 +95,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 设置提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * 设置提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182。
      *
      * @param host 提供 RPC 服务的主机地址
      */
@@ -104,7 +104,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 获得 RPC 调用结果状态码
+     * 获得 RPC 调用结果状态码。
      *
      * @return RPC 调用结果状态码
      */
@@ -113,7 +113,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 设置 RPC 调用结果状态码
+     * 设置 RPC 调用结果状态码。
      *
      * @param code RPC 调用结果状态码
      */
@@ -122,7 +122,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 获得 RPC 调用返回结果，在下列几种情况下，该值将会为 {@code null}
+     * 获得 RPC 调用返回结果，可能返回 {@code null}。在下列几种情况下，该值将会为 {@code null}
      * <ol>
      *     <li>RPC 调用成功，方法返回类型定义为 {@code void}</li>
      *     <li>RPC 调用成功，方法返回值为 {@code null}</li>
@@ -136,7 +136,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 设置 RPC 调用返回结果，允许设置 {@code null}
+     * 设置 RPC 调用返回结果，允许设置 {@code null}。
      *
      * @param result RPC 调用返回结果
      */
@@ -145,7 +145,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 获得 RPC 调用发生的异常信息，在下列几种情况下，该值将会为 {@code null}
+     * 获得 RPC 调用发生的异常信息，可能返回 {@code null}。在下列几种情况下，该值将会为 {@code null}
      * <ol>
      *     <li>RPC 调用成功</li>
      *     <li>RPC 调用失败，并且执行状态码为 {@link #CODE_UNKNOWN_HOST}</li>
@@ -159,7 +159,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 设置 RPC 调用发生的异常信息，允许设置 {@code null}
+     * 设置 RPC 调用发生的异常信息，允许设置 {@code null}。
      *
      * @param exception RPC 调用发生的异常信息
      */
@@ -168,7 +168,7 @@ public class BroadcastResponse {
     }
 
     /**
-     * 判断 RPC 调用是否成功
+     * 判断 RPC 调用是否成功。
      *
      * @return RPC 调用是否成功
      */

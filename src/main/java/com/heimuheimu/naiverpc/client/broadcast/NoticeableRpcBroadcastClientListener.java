@@ -24,10 +24,10 @@
 
 package com.heimuheimu.naiverpc.client.broadcast;
 
-import com.heimuheimu.naivemonitor.MonitorUtil;
 import com.heimuheimu.naivemonitor.alarm.NaiveServiceAlarm;
 import com.heimuheimu.naivemonitor.alarm.ServiceAlarmMessageNotifier;
 import com.heimuheimu.naivemonitor.alarm.ServiceContext;
+import com.heimuheimu.naivemonitor.util.MonitorUtil;
 import com.heimuheimu.naiverpc.client.DirectRpcClient;
 
 import java.lang.reflect.Method;
@@ -38,12 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * {@code NoticeableRpcBroadcastClientListener} 监听广播客户端 {@link RpcBroadcastClient} 中 {@link DirectRpcClient} 的关闭和恢复事件，
  * 以及 RPC 调用失败事件，可在上述事件发生时，通过报警消息通知器进行实时通知。
- * <br><strong>注意：</strong>接收到 RPC 服务提供方发送的下线操作请求导致的关闭不会进行通知。
+ *
+ * <p><strong>注意：</strong>接收到 RPC 服务提供方发送的下线操作请求导致的关闭不会进行通知。</p>
  *
  * <p><strong>说明：</strong>{@code NoticeableRpcBroadcastClientListener} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @author heimuheimu
  * @see NaiveServiceAlarm
+ * @author heimuheimu
  */
 public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientListenerSkeleton {
 
