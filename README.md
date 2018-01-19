@@ -202,7 +202,7 @@ public class RpcServerOfflineCommand implements NaiveCommand {
 }
 ```
 **JAR 项目**关闭步骤（建议通过自动化运维脚本实现以下步骤）
- * 执行 "telnet you-ip 4183"，打开 naivecli 命令行工具，输入 "offline" 命令后回车，等待返回 "ok" 输出
+ * 执行 "telnet your-project-ip 4183"，打开 naivecli 命令行工具，输入 "offline" 命令后回车，等待返回 "ok" 输出
  * 等待一段时间（可设置为客户端执行超时时间）
  * 关闭 JAR 项目
 
