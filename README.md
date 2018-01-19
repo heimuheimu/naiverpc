@@ -159,7 +159,7 @@ public class UserRemoteServiceImpl implements UserRemoteService {
 ### 关闭 RPC 服务
 为避免直接关闭 RPC 服务导致正在执行中的客户端调用失败，应先执行 RPC 服务下线操作，等待一段时间（可设置为客户端执行超时时间），再关闭应用。
 
-RPC 服务下线示例代码：
+**WEB 项目** RPC 服务下线示例代码：
 ```java
 @Controller
 @RequestMapping("/internal/rpc-server")
@@ -168,7 +168,7 @@ public class RpcServerController {
     @Autowired
     private RpcServer rpcServer;
     
-    @RequestMapping("/offline")
+    @RequestMapping("/offline.htm")
     @ResponseBody
     public String offline() {
         rpcServer.offline();
@@ -176,6 +176,36 @@ public class RpcServerController {
     }
 }
 ```
+
+**WEB 项目**关闭步骤（建议通过自动化运维脚本实现以下步骤）
+ * 调用下线 URL： /internal/rpc-server/offline.htm，等待返回 "ok" 输出
+ * 等待一段时间（可设置为客户端执行超时时间）
+ * 关闭 Tomcat
+
+**JAR 项目** RPC 服务下线示例代码（使用 [naivecli](https://github.com/heimuheimu/naivecli) 实现）：
+```java
+public class RpcServerOfflineCommand implements NaiveCommand {
+
+    @Autowired
+    private RpcServer rpcServer;
+
+    @Override
+    public String getName() {
+        return "offline";
+    }
+
+    @Override
+    public List<String> execute(String[] args) {
+        rpcServer.offline();
+        return Collections.singletonList("ok");
+    }
+}
+```
+**JAR 项目**关闭步骤（建议通过自动化运维脚本实现以下步骤）
+ * 执行 "telnet you-ip 4183"，打开 naivecli 命令行工具，输入 "offline" 命令后回车，等待返回 "ok" 输出
+ * 等待一段时间（可设置为客户端执行超时时间）
+ * 关闭 JAR 项目
+
 
 ## RPC 客户端
 
