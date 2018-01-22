@@ -1,4 +1,4 @@
-# NaiveCache: 简单易用的 Java RPC 框架。
+# NaiveRPC: 简单易用的 Java RPC 框架。
 
 ## 使用要求
 * JDK 版本：1.8+ 
