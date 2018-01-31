@@ -74,7 +74,7 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 ### Spring 配置
 ```xml
     <!-- RPC 服务配置，监听端口为 4182 -->
-    <bean id="rpcServer" class="com.heimuheimu.naiverpc.server.RpcServer" destroy-method="close">
+    <bean id="rpcServer" class="com.heimuheimu.naiverpc.server.RpcServer" init-method="init" destroy-method="close">
         <constructor-arg index="0" value="4182" /> <!-- RPC 服务监听端口，默认为 4182 -->
         <constructor-arg index="1"> <!-- 监听器，允许为 null -->
             <bean class="com.heimuheimu.naiverpc.server.SimpleRpcExecutorListener"/>
