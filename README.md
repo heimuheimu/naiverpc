@@ -79,7 +79,6 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
         <constructor-arg index="1"> <!-- 监听器，允许为 null -->
             <bean class="com.heimuheimu.naiverpc.server.SimpleRpcExecutorListener"/>
         </constructor-arg>
-        
     </bean>
     
     <!-- RPC 服务自动注册配置 -->
