@@ -43,8 +43,8 @@ public class RpcProxyFactory {
      *
      * @param clz 需要生成 RPC 调用代理的接口 Class
      * @param rpcClient RPC 服务调用方使用的客户端
+     * @param <T> RPC 服务类型
      * @return RPC 调用代理
-     *
      */
     @SuppressWarnings("unchecked")
     public static <T> T build(Class<T> clz, RpcClient rpcClient) {

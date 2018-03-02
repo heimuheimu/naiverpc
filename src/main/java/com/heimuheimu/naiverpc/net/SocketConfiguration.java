@@ -32,8 +32,8 @@ import java.net.SocketOptions;
  *
  * <p><strong>说明：</strong>{@code SocketConfiguration} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @see SocketBuilder
  * @author heimuheimu
+ * @see SocketBuilder
  */
 public class SocketConfiguration {
 	

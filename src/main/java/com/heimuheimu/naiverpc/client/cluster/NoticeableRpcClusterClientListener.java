@@ -42,8 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p><strong>说明：</strong>{@code NoticeableRpcClusterClientListener} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @see NaiveServiceAlarm
  * @author heimuheimu
+ * @see NaiveServiceAlarm
  */
 public class NoticeableRpcClusterClientListener extends RpcClusterClientListenerSkeleton {
 

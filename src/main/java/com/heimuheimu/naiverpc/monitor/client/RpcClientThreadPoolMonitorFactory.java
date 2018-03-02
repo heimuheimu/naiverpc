@@ -41,6 +41,8 @@ public class RpcClientThreadPoolMonitorFactory {
 
     /**
      * 获得 RPC 客户端使用的线程池信息监控器。
+     *
+     * @return 线程池信息监控器
      */
     public static ThreadPoolMonitor get() {
         return CLIENT_THREAD_POOL_MONITOR;

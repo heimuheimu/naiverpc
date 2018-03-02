@@ -27,8 +27,8 @@ package com.heimuheimu.naiverpc.constant;
 /**
  * RPC 操作代码。
  *
- * @see com.heimuheimu.naiverpc.packet.RpcPacket
  * @author heimuheimu
+ * @see com.heimuheimu.naiverpc.packet.RpcPacket
  */
 public class OperationCode {
 

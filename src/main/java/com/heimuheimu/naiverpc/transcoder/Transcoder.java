@@ -51,6 +51,7 @@ public interface Transcoder {
      * @param encodedValue 需要解码的字节数组
      * @param serializationType 序列化类型
      * @param compressionType 压缩类型
+     * @param <T> Java 对象类型
      * @return Java 对象
      * @throws Exception 解码过程中发生错误
      */

@@ -63,8 +63,8 @@ import java.util.concurrent.atomic.AtomicLongArray;
  *
  * <p><strong>说明：</strong>{@code RpcClusterClient} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
- * @see DirectRpcClient
  * @author heimuheimu
+ * @see DirectRpcClient
  */
 public class RpcClusterClient implements RpcClient {
 
@@ -152,6 +152,8 @@ public class RpcClusterClient implements RpcClient {
      * RPC 调用超时时间设置为 5 秒，最小压缩字节数设置为 64 KB，RPC 调用过慢最小时间设置为 50 毫秒，心跳检测时间设置为 30 秒。
      *
      * @param hosts 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182，不允许为 {@code null} 或空数组
+     * @param directRpcClientListener 创建 {@code DirectRpcClient} 使用的 {@code DirectRpcClient} 事件监听器，允许为 {@code null}
+     * @param rpcClusterClientListener {@code RpcClusterClient} 事件监听器，允许为 {@code null}
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址数组为 {@code null} 或空数组，将会抛出此异常
      * @throws IllegalStateException 如果所有提供 RPC 服务的主机地址都不可用，将会抛出此异常
      * @see DirectRpcClient

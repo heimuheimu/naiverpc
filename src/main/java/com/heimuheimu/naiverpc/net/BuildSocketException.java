@@ -27,8 +27,8 @@ package com.heimuheimu.naiverpc.net;
 /**
  * 创建 {@link java.net.Socket} 实例、设置 {@code Socket} 配置信息或读取 {@code Socket} 配置信息时发生错误，将抛出此异常。
  *
- * @see SocketBuilder
  * @author heimuheimu
+ * @see SocketBuilder
  */
 public class BuildSocketException extends RuntimeException {
 
