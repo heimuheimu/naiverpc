@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 自动扫描指定包下的所有和接口名字正则匹配的接口，并在 Spring 工厂中寻找对应的实现类，将其注册为 RPC 服务实例。
+ * RPC 服务自动注册器。自动扫描指定包下的所有和接口名字正则匹配的接口，并在 Spring 工厂中寻找对应的实现类，将其注册为 RPC 服务实例。
  *
  * @author heimuheimu
  */
@@ -67,10 +67,35 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
      */
     private final String classNameRegex;
 
+    /**
+     * 在 RPC 服务全部注册完成后，是否执行 {@link RpcServer#init()} 方法
+     */
+    private final boolean initRpcServer;
+
+    /**
+     * 构造一个 RPC 服务自动注册器，并在服务全部注册完成后，自动执行 {@link RpcServer#init()} 方法。
+     *
+     * @param rpcServer RPC 服务提供方
+     * @param basePackages RPC 服务接口包名数组
+     * @param classNameRegex 接口名字正则匹配规则
+     */
     public AutoRpcServiceBeanRegister(RpcServer rpcServer, String[] basePackages, String classNameRegex) {
+        this(rpcServer, basePackages, classNameRegex, true);
+    }
+
+    /**
+     * 构造一个 RPC 服务自动注册器。
+     *
+     * @param rpcServer RPC 服务提供方
+     * @param basePackages RPC 服务接口包名数组
+     * @param classNameRegex 接口名字正则匹配规则
+     * @param initRpcServer 在 RPC 服务全部注册完成后，是否执行 {@link RpcServer#init()} 方法
+     */
+    public AutoRpcServiceBeanRegister(RpcServer rpcServer, String[] basePackages, String classNameRegex, boolean initRpcServer) {
         this.rpcServer = rpcServer;
         this.basePackages = basePackages;
         this.classNameRegex = classNameRegex;
+        this.initRpcServer = initRpcServer;
     }
 
     @Override
@@ -99,6 +124,9 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
             }
         } else {
             LOG.error("There is no rpc service has been registered.");
+        }
+        if (initRpcServer) {
+            rpcServer.init();
         }
     }
 
