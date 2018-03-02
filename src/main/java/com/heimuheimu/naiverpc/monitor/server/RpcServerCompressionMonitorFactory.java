@@ -41,6 +41,8 @@ public class RpcServerCompressionMonitorFactory {
 
     /**
      * 获得 RPC 客户端使用的线程池信息监控器。
+     *
+     * @return 线程池信息监控器
      */
     public static CompressionMonitor get() {
         return SERVER_COMPRESSION_MONITOR;
