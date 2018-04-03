@@ -173,6 +173,7 @@ public class DirectRpcClientList implements Closeable {
         this.directRpcClientListener = directRpcClientListener;
         this.listener = listener;
         boolean hasAvailableClient = false;
+        boolean isNeedStartRescueTask = false;
         for (String host : hosts) {
             boolean isSuccess = createClient(-1, host);
             if (isSuccess) {
@@ -181,6 +182,7 @@ public class DirectRpcClientList implements Closeable {
                 Methods.invokeIfNotNull("DirectRpcClientListListener#onCreated(String host)", getParameterMap(-1, host),
                         listener, () -> listener.onCreated(name, host));
             } else {
+                isNeedStartRescueTask = true;
                 RPC_CONNECTION_LOG.error("Add `{}` to `{}` failed. Hosts: `{}`.", host, name, hosts);
                 Methods.invokeIfNotNull("DirectRpcClientListListener#onClosed(String host)", getParameterMap(-1, host),
                         listener, () -> listener.onClosed(name, host, false));
@@ -189,6 +191,9 @@ public class DirectRpcClientList implements Closeable {
         if ( !hasAvailableClient ) {
             LOG.error("There is no available `DirectRpcClient`. `name`:`" + name + "`. hosts:`" + Arrays.toString(hosts) + "`.");
             throw new IllegalStateException("There is no available `DirectRpcClient`. `name`:`" + name + "`. hosts:`" + Arrays.toString(hosts) + "`.");
+        }
+        if (isNeedStartRescueTask) {
+            startRescueTask();
         }
     }
 
