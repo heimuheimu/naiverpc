@@ -32,6 +32,7 @@ import com.heimuheimu.naiverpc.exception.TimeoutException;
 import com.heimuheimu.naiverpc.exception.TooBusyException;
 import com.heimuheimu.naiverpc.facility.clients.DirectRpcClientList;
 import com.heimuheimu.naiverpc.facility.clients.DirectRpcClientListListener;
+import com.heimuheimu.naiverpc.monitor.client.RpcClusterClientMonitor;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.util.LogBuildUtil;
 import org.slf4j.Logger;
@@ -85,6 +86,11 @@ public class RpcClusterClient implements RpcClient {
      * 记录已获取 {@code DirectRpcClient} 的次数，用于做负载均衡
      */
     private final AtomicLong count = new AtomicLong(0);
+
+    /**
+     * RPC 集群客户端信息监控器
+     */
+    private final RpcClusterClientMonitor rpcClusterClientMonitor = RpcClusterClientMonitor.getInstance();
 
     /**
      * 构造一个 RPC 服务调用方使用的集群客户端，创建 {@code DirectRpcClient} 时， {@link Socket} 配置信息使用 {@link SocketConfiguration#DEFAULT}，
@@ -189,6 +195,7 @@ public class RpcClusterClient implements RpcClient {
             String errorMessage = LogBuildUtil.buildMethodExecuteFailedLog("RpcClusterClient#execute(Method method, Object[] args, long timeout)",
                     "no available client", parameterMap);
             LOG.error(errorMessage);
+            rpcClusterClientMonitor.onUnavailable();
             throw new IllegalStateException(errorMessage);
         }
         return client;
