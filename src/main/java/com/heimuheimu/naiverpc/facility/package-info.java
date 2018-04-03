@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2017 heimuheimu
+ * Copyright (c) 2018 heimuheimu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.client.broadcast;
-
-import java.lang.reflect.Method;
-
 /**
- * {@link RpcBroadcastClient} 事件监听器骨架类，可防止 {@link RpcBroadcastClientListener} 在后续版本增加监听事件时，带来的编译错误。
- *
- * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
+ * 提供 NaiveRPC 项目使用的基础组件。
  *
  * @author heimuheimu
  */
-public abstract class RpcBroadcastClientListenerSkeleton implements RpcBroadcastClientListener {
-
-    @Override
-    public void onCreated(String host) {
-        //do nothing
-    }
-
-    @Override
-    public void onRecovered(String host) {
-        //do nothing
-    }
-
-    @Override
-    public void onClosed(String host, boolean isOffline) {
-        //do nothing
-    }
-
-    @Override
-    public void onFailedExecuted(String host, Method method, Object[] args) {
-        //do nothing
-    }
-}
+package com.heimuheimu.naiverpc.facility;

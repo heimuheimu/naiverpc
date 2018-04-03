@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2017 heimuheimu
+ * Copyright (c) 2018 heimuheimu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.heimuheimu.naiverpc.channel;
 
-package com.heimuheimu.naiverpc.client.cluster;
+import com.heimuheimu.naiverpc.packet.RpcPacket;
 
 /**
- * {@link RpcClusterClient} 事件监听器骨架类，可防止 {@link RpcClusterClientListener} 在后续版本增加监听事件时，带来的编译错误。
- *
- * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
+ * RPC 数据处理器。
  *
  * @author heimuheimu
  */
-public abstract class RpcClusterClientListenerSkeleton implements RpcClusterClientListener {
+@FunctionalInterface
+public interface RpcPacketProcessor {
 
-    @Override
-    public void onCreated(String host) {
-        //do nothing
-    }
-
-    @Override
-    public void onRecovered(String host) {
-        //do nothing
-    }
-
-    @Override
-    public void onClosed(String host, boolean isOffline) {
-        //do nothing
-    }
+    /**
+     * 当 {@code RpcChannel} 接收到一个 RPC 数据时，将会调用该函数进行处理。
+     *
+     * @param channel 接收到 RPC 数据的管道
+     * @param packet 接收到的 RPC 数据
+     */
+    void onReceived(RpcChannel channel, RpcPacket packet);
 }

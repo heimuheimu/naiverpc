@@ -26,12 +26,12 @@ package com.heimuheimu.naiverpc.client;
 
 import com.heimuheimu.naivemonitor.monitor.ExecutionMonitor;
 import com.heimuheimu.naiverpc.channel.RpcChannel;
-import com.heimuheimu.naiverpc.channel.RpcChannelListenerSkeleton;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
 import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.exception.TimeoutException;
 import com.heimuheimu.naiverpc.exception.TooBusyException;
+import com.heimuheimu.naiverpc.facility.UnusableServiceNotifier;
 import com.heimuheimu.naiverpc.message.RpcRequestMessage;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientCompressionMonitorFactory;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientExecutionMonitorFactory;
@@ -150,11 +150,14 @@ public class DirectRpcClient implements RpcClient {
      *
      * @param host 提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
+     * @param unusableServiceNotifier {@code DirectRpcClient} 不可用通知器，允许为 {@code null}
      * @throws IllegalArgumentException 如果提供 RPC 服务的主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
-    public DirectRpcClient(String host, DirectRpcClientListener clientListener) throws IllegalArgumentException, BuildSocketException {
-        this(host, null, 5000, 64 * 1024, 50, 30, clientListener);
+    public DirectRpcClient(String host, DirectRpcClientListener clientListener,
+                           UnusableServiceNotifier<DirectRpcClient> unusableServiceNotifier)
+            throws IllegalArgumentException, BuildSocketException {
+        this(host, null, 5000, 64 * 1024, 50, 30, clientListener, unusableServiceNotifier);
     }
 
     /**
@@ -167,6 +170,7 @@ public class DirectRpcClient implements RpcClient {
      * @param slowExecutionThreshold RPC 调用过慢最小时间，单位：毫秒，不能小于等于 0，RPC 调用时间大于该值时，将会触发 {@link DirectRpcClientListener#onSlowExecution(String, Method, Object[], long)} 事件
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内没有任何数据交互，将会发送一个心跳请求数据，如果该值小于等于 0，则不进行检测
      * @param clientListener {@code DirectRpcClient} 事件监听器，允许为 {@code null}
+     * @param unusableServiceNotifier {@code DirectRpcClient} 不可用通知器，允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 调用超时时间小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果最小压缩字节数小于等于 0，将会抛出此异常
      * @throws IllegalArgumentException 如果 RPC 调用过慢最小时间小于等于 0，将会抛出此异常
@@ -174,7 +178,8 @@ public class DirectRpcClient implements RpcClient {
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      */
     public DirectRpcClient(String host, SocketConfiguration configuration, int timeout, int compressionThreshold,
-        int slowExecutionThreshold, int heartbeatPeriod, DirectRpcClientListener clientListener)
+                           int slowExecutionThreshold, int heartbeatPeriod, DirectRpcClientListener clientListener,
+                           UnusableServiceNotifier<DirectRpcClient> unusableServiceNotifier)
             throws IllegalArgumentException, BuildSocketException {
         if (timeout <= 0) {
             LOG.error("Create DirectRpcClient failed: `timeout could not be equal or less than 0`. Host: `" + host + "`. SocketConfiguration: `"
@@ -212,29 +217,24 @@ public class DirectRpcClient implements RpcClient {
         //将毫秒转换为纳秒
         this.slowExecutionThreshold = TimeUnit.NANOSECONDS.convert(slowExecutionThreshold, TimeUnit.MILLISECONDS);
         this.executionMonitor = RpcClientExecutionMonitorFactory.get(host);
-        this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, new RpcChannelListenerSkeleton() {
-
-            @Override
-            public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
-                if (packet.isResponsePacket() && packet.getOpcode() == OperationCode.REMOTE_PROCEDURE_CALL) {
-                    long packetId = ByteUtil.readLong(packet.getHeader(), 8);
+        this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, unusableChannel -> {
+            for (CountDownLatch latch : latchMap.values()) {
+                latch.countDown();
+            }
+            if (unusableServiceNotifier != null) {
+                unusableServiceNotifier.onClosed(this);
+            }
+        }, (targetChannel, receivedPacket) -> {
+                if (receivedPacket.isResponsePacket() && receivedPacket.getOpcode() == OperationCode.REMOTE_PROCEDURE_CALL) {
+                    long packetId = ByteUtil.readLong(receivedPacket.getHeader(), 8);
                     CountDownLatch latch = latchMap.remove(packetId);
                     if (latch != null) {
-                        resultMap.put(packetId, packet);
+                        resultMap.put(packetId, receivedPacket);
                         latch.countDown();
                     }
                 } else { //should not happen
-                    LOG.error("Unrecognized rpc packet: `{}`", packet);
+                    LOG.error("Unrecognized rpc packet: `{}`", receivedPacket);
                 }
-            }
-
-            @Override
-            public void onClosed(RpcChannel channel) {
-                for (CountDownLatch latch : latchMap.values()) {
-                    latch.countDown();
-                }
-            }
-
         });
         this.rpcChannel.init();
         this.rpcClientListenerWrapper = new RpcClientListenerWrapper(clientListener);

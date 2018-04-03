@@ -28,7 +28,6 @@ import com.heimuheimu.naivemonitor.alarm.NaiveServiceAlarm;
 import com.heimuheimu.naivemonitor.alarm.ServiceAlarmMessageNotifier;
 import com.heimuheimu.naivemonitor.alarm.ServiceContext;
 import com.heimuheimu.naivemonitor.util.MonitorUtil;
-import com.heimuheimu.naiverpc.client.DirectRpcClient;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -36,17 +35,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * {@code NoticeableRpcBroadcastClientListener} 监听广播客户端 {@link RpcBroadcastClient} 中 {@link DirectRpcClient} 的关闭和恢复事件，
- * 以及 RPC 调用失败事件，可在上述事件发生时，通过报警消息通知器进行实时通知。
- *
- * <p><strong>注意：</strong>接收到 RPC 服务提供方发送的下线操作请求导致的关闭不会进行通知。</p>
+ * {@code NoticeableRpcBroadcastClientListener} 监听广播客户端中 {@code DirectRpcClient} 的 RPC 调用成功或失败事件，
+ * 可在上述事件发生时，通过报警消息通知器进行实时通知。
  *
  * <p><strong>说明：</strong>{@code NoticeableRpcBroadcastClientListener} 类是线程安全的，可在多个线程中使用同一个实例。</p>
  *
  * @author heimuheimu
  * @see NaiveServiceAlarm
  */
-public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientListenerSkeleton {
+public class NoticeableRpcBroadcastClientListener implements RpcBroadcastClientListener {
 
     /**
      * 使用 {@code RpcBroadcastClient} 的项目名称
@@ -69,24 +66,12 @@ public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientList
     private final NaiveServiceAlarm naiveServiceAlarm;
 
     /**
-     * 已发送下线操作请求的 RPC 服务提供方主机地址 {@code Map}
+     * 当前 RPC 调用失败信息 Map，Key 为主机名，Value 固定为 1
      */
-    private final ConcurrentHashMap<String, Integer> offlineHostMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Integer> failedExecuteMap = new ConcurrentHashMap<>();
 
     /**
-     * 构造一个对 {@link DirectRpcClient} 的关闭和恢复事件，以及 RPC 调用失败事件进行实时通知的 {@link RpcBroadcastClient} 事件监听器。
-     *
-     * @param project 使用 {@code RpcBroadcastClient} 的项目名称
-     * @param notifierList 报警消息通知器列表，不允许 {@code null} 或空
-     * @throws IllegalArgumentException 如果报警消息通知器列表为 {@code null} 或空时，抛出此异常
-     */
-    public NoticeableRpcBroadcastClientListener(String project, List<ServiceAlarmMessageNotifier> notifierList)
-            throws IllegalArgumentException {
-        this(project, null, notifierList, null);
-    }
-
-    /**
-     * 构造一个对 {@link DirectRpcClient} 的关闭和恢复事件，以及 RPC 调用失败事件进行实时通知的 {@link RpcBroadcastClient} 事件监听器。
+     * 构造一个 {@link RpcBroadcastClient} 事件监听器。
      *
      * @param project 使用 {@code RpcBroadcastClient} 的项目名称
      * @param serviceName 调用的 RPC 服务名称，方便在同一项目调用多个 RPC 服务时进行区分，允许为 {@code null} 或者空字符串
@@ -99,7 +84,7 @@ public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientList
     }
 
     /**
-     * 构造一个对 {@link DirectRpcClient} 的关闭和恢复事件，以及 RPC 调用失败事件进行实时通知的 {@link RpcBroadcastClient} 事件监听器。
+     * 构造一个 {@link RpcBroadcastClient} 事件监听器。
      *
      * @param project 使用 {@code RpcBroadcastClient} 的项目名称
      * @param serviceName 调用的 RPC 服务名称，方便在同一项目调用多个 RPC 服务时进行区分，允许为 {@code null} 或者空字符串
@@ -121,26 +106,18 @@ public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientList
     }
 
     @Override
-    public void onRecovered(String host) {
-        if (offlineHostMap.remove(host) == null) {
-            naiveServiceAlarm.onRecovered(getServiceContext(host));
+    public void onSuccess(String host, Method method, Object[] args) {
+        if (failedExecuteMap.remove(host) != null) {
+            ServiceContext serviceContext = getServiceContext(host);
+            naiveServiceAlarm.onRecovered(serviceContext);
         }
     }
 
     @Override
-    public void onClosed(String host, boolean isOffline) {
-        if (isOffline) {
-            offlineHostMap.put(host, 1);
-        } else {
-            naiveServiceAlarm.onCrashed(getServiceContext(host));
-        }
-    }
-
-    @Override
-    public void onFailedExecuted(String host, Method method, Object[] args) {
+    public void onFail(String host, Method method, Object[] args) {
         ServiceContext serviceContext = getServiceContext(host);
-        serviceContext.setName("[FailedExec] " + serviceContext.getName());
         naiveServiceAlarm.onCrashed(serviceContext);
+        failedExecuteMap.put(host, 1);
     }
 
     /**
@@ -152,9 +129,9 @@ public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientList
     protected ServiceContext getServiceContext(String rpcServerHost) {
         ServiceContext serviceContext = new ServiceContext();
         if (serviceName != null && !serviceName.isEmpty()) {
-            serviceContext.setName("[RpcBroadcastClient] " + serviceName);
+            serviceContext.setName("[FailedExec][RpcBroadcastClient] " + serviceName);
         } else {
-            serviceContext.setName("RpcBroadcastClient");
+            serviceContext.setName("[FailedExec] RpcBroadcastClient");
         }
         serviceContext.setHost(host);
         serviceContext.setProject(project);
@@ -168,6 +145,7 @@ public class NoticeableRpcBroadcastClientListener extends RpcBroadcastClientList
                 "project='" + project + '\'' +
                 ", host='" + host + '\'' +
                 ", serviceName='" + serviceName + '\'' +
+                ", naiveServiceAlarm=" + naiveServiceAlarm +
                 '}';
     }
 }

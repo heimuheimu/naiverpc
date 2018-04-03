@@ -25,8 +25,6 @@
 package com.heimuheimu.naiverpc.server;
 
 import com.heimuheimu.naiverpc.channel.RpcChannel;
-import com.heimuheimu.naiverpc.channel.RpcChannelListener;
-import com.heimuheimu.naiverpc.channel.RpcChannelListenerSkeleton;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
@@ -68,11 +66,6 @@ public class RpcServer implements Closeable {
      * 已经与 RPC 调用方建立的 {@code RpcChannel} 列表
      */
     private final CopyOnWriteArrayList<RpcChannel> activeRpcChannelList = new CopyOnWriteArrayList<>();
-
-    /**
-     * {@code RpcServer} 使用的 {@code RpcChannel} 事件监听器
-     */
-    private final RpcChannelListener rpcChannelListener = new RpcChannelListenerImpl();
 
     /**
      * {@code RpcServer} 所处状态
@@ -267,6 +260,14 @@ public class RpcServer implements Closeable {
                 '}';
     }
 
+    private void onRpcPacketReceived(RpcChannel targetChannel, RpcPacket receivedPacket) {
+        if (receivedPacket.isRequestPacket() && receivedPacket.getOpcode() == OperationCode.REMOTE_PROCEDURE_CALL) {
+            rpcExecutor.execute(targetChannel, receivedPacket);
+        } else { //should not happen
+            LOG.error("Unrecognized rpc packet. Port: `{}`. Invalid packet: `{}`.", port, receivedPacket);
+        }
+    }
+
     private class RpcServerTask extends Thread {
 
         private volatile boolean stopSignal = false;
@@ -283,7 +284,7 @@ public class RpcServer implements Closeable {
                 try {
                     Socket socket = serverSocket.accept();
                     SocketBuilder.setConfig(socket, socketConfiguration);
-                    RpcChannel rpcChannel = new RpcChannel(socket, rpcChannelListener);
+                    RpcChannel rpcChannel = new RpcChannel(socket, activeRpcChannelList::remove, RpcServer.this::onRpcPacketReceived);
                     rpcChannel.init();
                     if (rpcChannel.isActive()) {
                         activeRpcChannelList.add(rpcChannel);
@@ -306,23 +307,4 @@ public class RpcServer implements Closeable {
         }
 
     }
-
-    private class RpcChannelListenerImpl extends RpcChannelListenerSkeleton {
-
-        @Override
-        public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
-            if (packet.isRequestPacket() && packet.getOpcode() == OperationCode.REMOTE_PROCEDURE_CALL) {
-                rpcExecutor.execute(channel, packet);
-            } else { //should not happen
-                LOG.error("Unrecognized rpc packet. Port: `{}`. Invalid packet: `{}`.", port, packet);
-            }
-        }
-
-        @Override
-        public void onClosed(RpcChannel channel) {
-            activeRpcChannelList.remove(channel);
-        }
-
-    }
-
 }

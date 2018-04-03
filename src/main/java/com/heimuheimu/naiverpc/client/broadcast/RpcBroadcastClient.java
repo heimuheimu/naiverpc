@@ -105,5 +105,4 @@ public interface RpcBroadcastClient extends Closeable {
      * @throws IllegalStateException 如果 {@code RpcBroadcastClient} 处于不可服务状态，将抛出此异常
      */
     Map<String, BroadcastResponse> execute(String[] hosts, Method method, Object[] args, long timeout) throws IllegalArgumentException, IllegalStateException;
-
 }

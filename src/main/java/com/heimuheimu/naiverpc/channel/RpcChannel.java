@@ -28,6 +28,7 @@ import com.heimuheimu.naivemonitor.monitor.SocketMonitor;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.constant.OperationCode;
 import com.heimuheimu.naiverpc.constant.ResponseStatusCode;
+import com.heimuheimu.naiverpc.facility.UnusableServiceNotifier;
 import com.heimuheimu.naiverpc.monitor.client.RpcClientSocketMonitorFactory;
 import com.heimuheimu.naiverpc.monitor.server.RpcServerSocketMonitorFactory;
 import com.heimuheimu.naiverpc.net.BuildSocketException;
@@ -46,6 +47,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -56,11 +58,6 @@ import java.util.concurrent.TimeUnit;
  *     {@code RpcChannel} 实例应调用 {@link #init()} 方法，初始化成功后，双方才可进行 RPC 数据通信。
  *     管道是否可以进行数据通信可通过 {@link #isActive()} 方法进行判断。当管道不再使用时，应调用 {@link #close()} 方法进行资源释放。
  * </p>
- *
- * <h3>监听器</h3>
- * <blockquote>
- * 当管道接收到 RPC 数据或管道被关闭时，均会触发 {@link RpcChannelListener} 相应的事件进行通知。
- * </blockquote>
  *
  * <h3>数据监控</h3>
  * <blockquote>
@@ -97,7 +94,6 @@ public class RpcChannel implements Closeable {
 
     private static final String MODE_SERVER = "Server";
 
-
     /**
      * 等待发送的 RPC 数据队列
      */
@@ -119,9 +115,14 @@ public class RpcChannel implements Closeable {
     private final int heartbeatPeriod;
 
     /**
-     * RPC 数据通信管道事件监听器
+     * {@code RpcChannel} 不可用通知器，允许为 {@code null}
      */
-    private final RpcChannelListener rpcChannelListener;
+    private final UnusableServiceNotifier<RpcChannel> unusableServiceNotifier;
+
+    /**
+     * RPC 数据处理器
+     */
+    private final RpcPacketProcessor rpcPacketProcessor;
 
     /**
      * RPC 数据通信管道使用的 Socket 信息监控器
@@ -149,6 +150,16 @@ public class RpcChannel implements Closeable {
     private volatile boolean isOffline = false;
 
     /**
+     * 检测心跳是否成功使用的 {@code CountDownLatch} 实例
+     */
+    private volatile CountDownLatch heartbeatLatch = null;
+
+    /**
+     * 检测下线操作是否成功使用的 {@code CountDownLatch} 实例
+     */
+    private final CountDownLatch offlineLatch = new CountDownLatch(1);
+
+    /**
      * RPC 数据包发送线程
      */
     private WriteTask writeTask;
@@ -161,17 +172,21 @@ public class RpcChannel implements Closeable {
      * @param host RPC 服务提供方主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param configuration {@link Socket} 配置信息，如果传 {@code null}，将会使用 {@link SocketConfiguration#DEFAULT} 配置信息
      * @param heartbeatPeriod 心跳检测时间，单位：秒，在该周期时间内当前管道如果没有任何数据通信，将会发送一个心跳请求数据包，如果该值小于等于 0，则不进行检测
-     * @param rpcChannelListener {@code RpcChannel} 事件监听器
+     * @param unusableServiceNotifier {@code RpcChannel} 不可用通知器，允许为 {@code null}
+     * @param rpcPacketProcessor RPC 数据处理器，不允许为 {@code null}
      * @throws IllegalArgumentException 如果 RPC 服务提供方主机地址不符合规则，将会抛出此异常
      * @throws BuildSocketException 如果创建 {@link Socket} 过程中发生错误，将会抛出此异常
      * @see #init()
      */
-    public RpcChannel(String host, SocketConfiguration configuration, int heartbeatPeriod, RpcChannelListener rpcChannelListener)
+    public RpcChannel(String host, SocketConfiguration configuration, int heartbeatPeriod,
+                      UnusableServiceNotifier<RpcChannel> unusableServiceNotifier,
+                      RpcPacketProcessor rpcPacketProcessor)
             throws IllegalArgumentException, BuildSocketException {
         this.host = host;
         this.socket = SocketBuilder.create(host, configuration);
         this.heartbeatPeriod = heartbeatPeriod;
-        this.rpcChannelListener = rpcChannelListener;
+        this.unusableServiceNotifier = unusableServiceNotifier;
+        this.rpcPacketProcessor = rpcPacketProcessor;
         this.socketMonitor = RpcClientSocketMonitorFactory.get(host);
         this.mode = MODE_CLIENT;
     }
@@ -182,11 +197,13 @@ public class RpcChannel implements Closeable {
      * <p><b>注意：</b>管道必须执行 {@link #init()} 方法，完成初始化后才可正常使用。</p>
      *
      * @param socket 与 RPC 服务调用方建立的 {@code Socket} 连接，不允许为 {@code null}
-     * @param rpcChannelListener RPC 数据通信管道事件监听器，允许为 {@code null}
+     * @param unusableServiceNotifier {@code RpcChannel} 不可用通知器，允许为 {@code null}
+     * @param rpcPacketProcessor RPC 数据处理器，不允许为 {@code null}
      * @throws NullPointerException 如果 {@code Socket} 连接为 {@code null}，将会抛出此异常
      * @see #init()
      */
-    public RpcChannel(Socket socket, RpcChannelListener rpcChannelListener) throws NullPointerException {
+    public RpcChannel(Socket socket, UnusableServiceNotifier<RpcChannel> unusableServiceNotifier,
+                      RpcPacketProcessor rpcPacketProcessor) throws NullPointerException {
         if (socket == null) {
             LOG.error("[Server] Create RpcChannel failed: `socket could not be null`.");
             throw new NullPointerException("[Server] Create RpcChannel failed: `socket could not be null`.");
@@ -199,7 +216,8 @@ public class RpcChannel implements Closeable {
         this.host = remoteHostName + ":" + socket.getPort();
         this.socket = socket;
         this.heartbeatPeriod = -1;
-        this.rpcChannelListener = rpcChannelListener;
+        this.unusableServiceNotifier = unusableServiceNotifier;
+        this.rpcPacketProcessor = rpcPacketProcessor;
         this.socketMonitor = RpcServerSocketMonitorFactory.get(socket.getLocalPort(), remoteHostName);
         this.mode = MODE_SERVER;
     }
@@ -207,7 +225,7 @@ public class RpcChannel implements Closeable {
     /**
      * 执行 {@code RpcChannel} 初始化操作，在初始化完成后，重复执行该方法不会产生任何效果。管道是否可以进行数据通信可通过 {@link #isActive()} 方法进行判断。
      *
-     * <p><strong>注意：</strong>该方法不会抛出任何异常，如果初始化失败，管道将被自动关闭，且不会触发 {@link RpcChannelListener#onClosed(RpcChannel)} 事件。</p>
+     * <p><strong>注意：</strong>该方法不会抛出任何异常，如果初始化失败，管道将被自动关闭。</p>
      */
     public void init() {
         synchronized (lock) {
@@ -229,13 +247,13 @@ public class RpcChannel implements Closeable {
                                 mode, (System.currentTimeMillis() - startTime), host, socket.getLocalPort(), heartbeatPeriod, config);
                     } else {
                         RPC_CONNECTION_LOG.error("[{}] Initialize RpcChannel failed: `socket is not connected or has been closed`. Host: `{}`.", mode, host);
-                        close(false);
+                        close();
                     }
                 } catch (Exception e) {
                     RPC_CONNECTION_LOG.error("[{}] Initialize RpcChannel failed: `{}`. Host: `{}`. Heartbeat period: `{}`.",
                             mode, e.getMessage(), host, heartbeatPeriod);
                     LOG.error("[" + mode + "] Initialize RpcChannel failed: `" + e.getMessage() + "`. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-                    close(false);
+                    close();
                 }
             }
         }
@@ -244,15 +262,37 @@ public class RpcChannel implements Closeable {
     /**
      * 执行 RPC 数据通信管道关闭操作，进行资源释放，在关闭完成后，重复执行该方法不会产生任何效果。
      *
-     * <p><strong>注意：</strong>该方法不会抛出任何异常，{@link RpcChannelListener#onClosed(RpcChannel)} 事件只会被通知一次。</p>
+     * <p><strong>注意：</strong>该方法不会抛出任何异常。</p>
      */
     @Override
     public void close() {
-        close(true);
+        synchronized (lock) {
+            if (state != BeanStatusEnum.CLOSED) {
+                long startTime = System.currentTimeMillis();
+                state = BeanStatusEnum.CLOSED;
+                try {
+                    //关闭 Socket 连接
+                    socket.close();
+                    //停止 Write 线程
+                    writeTask.stopSignal = true;
+                    writeTask.interrupt();
+                    RPC_CONNECTION_LOG.info("[{}] RpcChannel has been closed. Cost: `{}ms`. Host: `{}`. Heartbeat period: `{}`.",
+                            mode, (System.currentTimeMillis() - startTime), host, heartbeatPeriod);
+                } catch (Exception e) {
+                    RPC_CONNECTION_LOG.error("[{}] Close RpcChannel failed: `{}`. Host: `{}`.", mode, e.getMessage(), host);
+                    LOG.error("[" + mode + "] Close RpcChannel failed: `" + e.getMessage() + "`. Host: `" + host + "`. Socket: `" + socket + "`.", e);
+                } finally {
+                    if (unusableServiceNotifier != null) {
+                        unusableServiceNotifier.onClosed(this);
+                    }
+                }
+            }
+        }
     }
 
     /**
      * 判断当前 RPC 数据通信管道是否可用。在以下情况，管道将被认为不可用：
+     *
      * <ul>
      *     <li>管道没有执行初始化操作，或已执行关闭操作。</li>
      *     <li>RPC 服务调用方管道接收到了 RPC 服务提供方发送的下线操作请求。</li>
@@ -292,13 +332,29 @@ public class RpcChannel implements Closeable {
      * RPC 服务提供方给 RPC 服务调用方发送一个下线操作请求，调用方在收到该请求后将不再发送新的 RPC 数据，并在 1 分钟后关闭当前管道。
      *
      * <p><strong>说明：</strong>该方法由 RPC 服务提供方调用，RPC 服务调用方调用此方法不产生任何效果。该方法不会抛出任何异常。</p>
+     *
+     * @return 下线操作是否成功
      */
-    public void offline() {
+    public boolean offline() {
         if (mode.equals(MODE_SERVER)) {
             rpcPacketQueue.add(RpcPacketBuilder.buildRequestPacket(0, OperationCode.OFFLINE));
+            boolean latchFlag;
+            try {
+                latchFlag = offlineLatch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) { //never happened
+                latchFlag = false;
+            }
+            if (latchFlag) {
+                RPC_CONNECTION_LOG.info("[{}] Offline RpcChannel success. Host: `{}`. Socket: `{}`.", mode, host, socket);
+                return true;
+            } else {
+                RPC_CONNECTION_LOG.error("[{}] Offline RpcChannel failed: `offline timeout`. Host: `{}`. Socket: `{}`.", mode, host, socket);
+                return false;
+            }
         } else {
             LOG.warn("[" + mode + "] RpcChannel offline failed: `client rpc channel should not invoke #offline() method`. State: `" + state +
                     "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
+            return false;
         }
     }
 
@@ -313,43 +369,14 @@ public class RpcChannel implements Closeable {
         return isOffline;
     }
 
-    private void close(boolean triggerOnClosedEvent) {
-        synchronized (lock) {
-            if (state != BeanStatusEnum.CLOSED) {
-                long startTime = System.currentTimeMillis();
-                state = BeanStatusEnum.CLOSED;
-                try {
-                    //关闭 Socket 连接
-                    socket.close();
-                    //停止 Write 线程
-                    writeTask.stopSignal = true;
-                    writeTask.interrupt();
-                    RPC_CONNECTION_LOG.info("[{}] RpcChannel has been closed. Cost: `{}ms`. Host: `{}`. Heartbeat period: `{}`.",
-                            mode, (System.currentTimeMillis() - startTime), host, heartbeatPeriod);
-                } catch (Exception e) {
-                    RPC_CONNECTION_LOG.error("[{}] Close RpcChannel failed: `{}`. Host: `{}`.", mode, e.getMessage(), host);
-                    LOG.error("[" + mode + "] Close RpcChannel failed: `" + e.getMessage() + "`. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-                }
-                if (triggerOnClosedEvent) {
-                    if (rpcChannelListener != null) {
-                        try {
-                            rpcChannelListener.onClosed(this);
-                        } catch (Exception e) {
-                            LOG.error("[" + mode + "] Call RpcChannelListener#onClosed() failed. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     @Override
     public String toString() {
         return "RpcChannel{" +
                 "host='" + host + '\'' +
                 ", socket=" + socket +
                 ", heartbeatPeriod=" + heartbeatPeriod +
-                ", rpcChannelListener=" + rpcChannelListener +
+                ", unusableServiceNotifier=" + unusableServiceNotifier +
+                ", socketMonitor=" + socketMonitor +
                 ", state=" + state +
                 ", mode='" + mode + '\'' +
                 ", isOffline=" + isOffline +
@@ -406,8 +433,26 @@ public class RpcChannel implements Closeable {
                             outputStream.flush();
                         }
                     } else {
+                        heartbeatLatch = new CountDownLatch(1);
                         rpcPacketQueue.add(RpcPacketBuilder.buildRequestPacket(0, OperationCode.HEARTBEAT));
                         LOG.debug("[{}] Send heartbeat request packet success. Host: `{}`.", mode, host);
+                        new Thread() { // 启动一个异步线程检查心跳是否有正常返回
+
+                            @Override
+                            public void run() {
+                                boolean latchFlag;
+                                try {
+                                    latchFlag = heartbeatLatch.await(Math.min(5, heartbeatPeriod), TimeUnit.SECONDS);
+                                } catch (InterruptedException e) { //never happened
+                                    latchFlag = false;
+                                }
+                                if (!latchFlag) { // 心跳请求没有正常返回，关闭当前管道
+                                    RPC_CONNECTION_LOG.error("[{}] RpcChannel need to be closed due to: `heartbeat timeout`. Host: `{}`. Socket: `{}`", mode, host, socket);
+                                    close();
+                                }
+                            }
+
+                        }.start();;
                     }
                 }
             } catch (InterruptedException e) {
@@ -469,6 +514,7 @@ public class RpcChannel implements Closeable {
                             rpcPacketQueue.add(RpcPacketBuilder.buildResponsePacket(rpcPacket, ResponseStatusCode.SUCCESS));
                             LOG.debug("[{}] Send heartbeat response packet success. Host: `{}`.", mode, host);
                         } else {
+                            heartbeatLatch.countDown();
                             LOG.debug("[{}] Receive heartbeat response packet success. Host: `{}`.", mode, host);
                         }
                     } else if (rpcPacket.getOpcode() == OperationCode.OFFLINE) {
@@ -486,18 +532,20 @@ public class RpcChannel implements Closeable {
                                 }
 
                             }.start();
+                            if (unusableServiceNotifier != null) {
+                                unusableServiceNotifier.onClosed(RpcChannel.this);
+                            }
                             rpcPacketQueue.add(RpcPacketBuilder.buildResponsePacket(rpcPacket, ResponseStatusCode.SUCCESS));
                             LOG.debug("[{}] Send offline response packet success. Host: `{}`.", mode, host);
                         } else {
+                            offlineLatch.countDown();
                             LOG.debug("[{}] Receive offline response packet success. Host: `{}`.", mode, host);
                         }
                     } else {
-                        if (rpcChannelListener != null) {
-                            try {
-                                rpcChannelListener.onReceiveRpcPacket(RpcChannel.this, rpcPacket);
-                            } catch (Exception e) {
-                                LOG.error("[" + mode + "] Call RpcChannelListener#onReceiveRpcPacket() failed. Host: `" + host + "`. Socket: `" + socket + "`.", e);
-                            }
+                        try {
+                            rpcPacketProcessor.onReceived(RpcChannel.this, rpcPacket);
+                        } catch (Exception e) {
+                            LOG.error("[" + mode + "] Call RpcChannelListener#onReceiveRpcPacket() failed. Host: `" + host + "`. Socket: `" + socket + "`.", e);
                         }
                     }
                 }

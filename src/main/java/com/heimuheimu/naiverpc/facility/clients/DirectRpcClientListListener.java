@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2017 heimuheimu
+ * Copyright (c) 2018 heimuheimu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,41 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.client.cluster;
+package com.heimuheimu.naiverpc.facility.clients;
 
 /**
- * {@link RpcClusterClient} 事件监听器，可监听集群客户端中 {@code DirectRpcClient} 的创建、关闭、恢复等事件。
+ * RPC 直连客户端列表事件监听器，可监听集群列表中 {@code DirectRpcClient} 的创建、关闭、恢复等事件。
  *
  * <p>
- *     <strong>说明：</strong>监听器的实现类必须是线程安全的。应优先考虑继承 {@link RpcClusterClientListenerSkeleton} 骨架类进行实现，
- *     防止 {@code RpcClusterClientListener} 在后续版本增加监听事件时，带来的编译错误。
+ *     <strong>说明：</strong>监听器的实现类必须是线程安全的。
  * </p>
  *
  * @author heimuheimu
  */
-public interface RpcClusterClientListener {
+public interface DirectRpcClientListListener {
 
     /**
-     * 当 {@code DirectRpcClient} 在 {@code RpcClusterClient} 初始化过程被创建成功时，将会触发此事件。
+     * 当 {@code DirectRpcClient} 在 {@code DirectRpcClientList} 初始化过程被创建成功时，将会触发此事件。
      *
-     * @param host 创建成功的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * @param listName RPC 直连客户端列表名称
+     * @param host 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
-    void onCreated(String host);
+    void onCreated(String listName, String host);
 
     /**
      * 当 {@code DirectRpcClient} 恢复时，将会触发此事件。
      *
-     * @param host 已恢复的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * @param listName RPC 直连客户端列表名称
+     * @param host 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
      */
-    void onRecovered(String host);
+    void onRecovered(String listName, String host);
 
     /**
      * 当 {@code DirectRpcClient} 关闭时，将会触发此事件。
      *
-     * @param host 已关闭的提供 RPC 服务的主机地址，由主机名和端口组成，":"符号分割，例如：localhost:4182
+     * @param listName RPC 直连客户端列表名称
+     * @param host 提供 RPC 服务的主机地址数组，由主机名和端口组成，":"符号分割，例如：localhost:4182
      * @param isOffline 是否为接收到 RPC 服务提供方发送的下线操作请求导致的关闭
      */
-    void onClosed(String host, boolean isOffline);
+    void onClosed(String listName, String host, boolean isOffline);
 }

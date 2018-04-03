@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2017 heimuheimu
+ * Copyright (c) 2018 heimuheimu
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,9 @@
  * SOFTWARE.
  */
 
-package com.heimuheimu.naiverpc.channel;
-
-import com.heimuheimu.naiverpc.packet.RpcPacket;
-
 /**
- * {@link RpcChannel} 事件监听器骨架类，可防止 {@link RpcChannelListener} 在后续版本增加监听事件时，带来的编译错误。
- *
- * <p><strong>说明：</strong>监听器的实现类必须是线程安全的。</p>
+ * 提供 RPC 直连客户端列表类：{@link com.heimuheimu.naiverpc.facility.clients.DirectRpcClientList}。
  *
  * @author heimuheimu
  */
-public abstract class RpcChannelListenerSkeleton implements RpcChannelListener {
-
-    @Override
-    public void onReceiveRpcPacket(RpcChannel channel, RpcPacket packet) {
-        //do nothing
-    }
-
-    @Override
-    public void onClosed(RpcChannel channel) {
-        //do nothing
-    }
-}
+package com.heimuheimu.naiverpc.facility.clients;
