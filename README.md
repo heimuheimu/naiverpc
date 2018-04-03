@@ -13,7 +13,7 @@
     <dependency>
         <groupId>com.heimuheimu</groupId>
         <artifactId>naiverpc</artifactId>
-        <version>1.0</version>
+        <version>1.1.0-SNAPSHOT</version>
     </dependency>
 ```
 
@@ -21,6 +21,7 @@
 
 ### Log4J 配置
 ```
+# RPC 错误信息根日志
 log4j.logger.com.heimuheimu.naiverpc=ERROR, NAIVERPC
 log4j.additivity.com.heimuheimu.naiverpc=false
 log4j.appender.NAIVERPC=org.apache.log4j.DailyRollingFileAppender
@@ -74,7 +75,7 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 ### Spring 配置
 ```xml
     <!-- RPC 服务配置，监听端口为 4182 -->
-    <bean id="rpcServer" class="com.heimuheimu.naiverpc.server.RpcServer" destroy-method="close">
+    <bean id="rpcServer" class="com.heimuheimu.naiverpc.spring.server.RpcServerFactory" destroy-method="close">
         <constructor-arg index="0" value="4182" /> <!-- RPC 服务监听端口，默认为 4182 -->
         <constructor-arg index="1"> <!-- 监听器，允许为 null -->
             <bean class="com.heimuheimu.naiverpc.server.SimpleRpcExecutorListener"/>
@@ -210,6 +211,7 @@ public class RpcServerOfflineCommand implements NaiveCommand {
 
 ### Log4J 配置
 ```
+# RPC 错误信息根日志
 log4j.logger.com.heimuheimu.naiverpc=ERROR, NAIVERPC
 log4j.additivity.com.heimuheimu.naiverpc=false
 log4j.appender.NAIVERPC=org.apache.log4j.DailyRollingFileAppender
@@ -253,21 +255,21 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 ### Spring 配置
 ```xml
     <!-- RPC 集群客户端事件监听器配置，在 RPC 服务不可用时进行实时通知 -->
-    <bean id="noticeableRpcClusterClientListener" class="com.heimuheimu.naiverpc.client.cluster.NoticeableRpcClusterClientListener">
+    <bean id="rpcClientListListener" class="com.heimuheimu.naiverpc.facility.clients.NoticeableDirectRpcClientListListener">
         <constructor-arg index="0" value="your-project-name" /> <!-- 当前项目名称 -->
         <constructor-arg index="1" value="rpc-server-name" /> <!-- RPC 服务名称 -->
         <constructor-arg index="2" ref="notifierList" /> <!-- 报警器列表，报警器的信息可查看 naivemonitor 项目 -->
     </bean>
     
     <!-- RPC 集群客户端配置 -->
-    <bean id="rpcClient" class="com.heimuheimu.naiverpc.client.cluster.RpcClusterClient" destroy-method="close">
+    <bean id="rpcClient" class="com.heimuheimu.naiverpc.spring.client.RpcClusterClientFactory" destroy-method="close">
         <constructor-arg index="0" value="127.0.0.1:4182,127.0.0.1:4183,127.0.0.1:4184" /> <!-- RPC 服务地址列表，使用 "," 分割 -->
         <constructor-arg index="1">
             <bean class="com.heimuheimu.naiverpc.client.SimpleDirectRpcClientListener">
                 <constructor-arg index="0" value="rpc-server-name" /> <!-- RPC 服务名称 -->
             </bean>
         </constructor-arg>
-        <constructor-arg index="2" ref="noticeableRpcClusterClientListener" />
+        <constructor-arg index="2" ref="rpcClientListListener" />
     </bean>
     
     <!-- 远程 RPC 服务自动注册配置 -->
@@ -293,6 +295,7 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
             <constructor-arg index="0" value="rpc-server-name" /> <!-- groupName: RPC 服务名称 -->
             <constructor-arg index="1" value="127.0.0.1:4182,127.0.0.1:4183,127.0.0.1:4184" /> <!-- RPC 服务地址列表，使用 "," 分割 -->
         </bean>
+        <bean class="com.heimuheimu.naiverpc.monitor.client.falcon.RpcClusterClientDataCollector"></bean>
     </util:list>
     
     <!-- Falcon 监控数据上报器 -->
@@ -322,6 +325,7 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
  * naiverpc_client_threadPool_maximum_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的最大线程数总和
  * naiverpc_client_compression_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内压缩操作已节省的字节数
  * naiverpc_client_compression_avg_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内平均每次压缩操作节省的字节数
+ * naiverpc_client_cluster_unavailable_client_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 集群客户端获取到不可用 RPC 客户端的次数
  
 ### 示例代码
 RPC 远程服务调用示例代码（NaiveRPC 会自动扫描符合条件的接口，生成对应的 RPC 服务代理，将其注册在 Spring 中)：
@@ -343,15 +347,22 @@ public class RpcClientDemo {
     
 #### Spring 配置
 ```xml
+    <!-- RPC 集群客户端事件监听器配置，在 RPC 服务不可用时进行实时通知 -->
+    <bean id="rpcClientListListener" class="com.heimuheimu.naiverpc.facility.clients.NoticeableDirectRpcClientListListener">
+        <constructor-arg index="0" value="your-project-name" /> <!-- 当前项目名称 -->
+        <constructor-arg index="1" value="rpc-server-name" /> <!-- RPC 服务名称 -->
+        <constructor-arg index="2" ref="notifierList" /> <!-- 报警器列表，报警器的信息可查看 naivemonitor 项目 -->
+    </bean>
+
     <!-- RPC 广播客户端事件监听器配置，在 RPC 服务调用失败时进行实时通知 -->
-    <bean id="noticeableRpcBroadcastClientListener" class="com.heimuheimu.naiverpc.client.broadcast.NoticeableRpcBroadcastClientListener">
+    <bean id="rpcBroadcastClientListener" class="com.heimuheimu.naiverpc.client.broadcast.NoticeableRpcBroadcastClientListener">
         <constructor-arg index="0" value="your-project-name" /> <!-- 当前项目名称 -->
         <constructor-arg index="1" value="rpc-server-name" /> <!-- RPC 服务名称 -->
         <constructor-arg index="2" ref="notifierList" /> <!-- 报警器列表，报警器的信息可查看 naivemonitor 项目 -->
     </bean>
     
     <!-- RPC 广播客户端配置 -->
-    <bean id="broadcastRpcClient" class="com.heimuheimu.naiverpc.client.broadcast.ParallelRpcBroadcastClient" destroy-method="close">
+    <bean id="broadcastRpcClient" class="com.heimuheimu.naiverpc.spring.client.ParallelRpcBroadcastClientFactory" destroy-method="close">
         <constructor-arg index="0" value="127.0.0.1:4182,127.0.0.1:4183,127.0.0.1:4184" /> <!-- RPC 服务地址列表，使用 "," 分割 -->
         <constructor-arg index="1"><null/></constructor-arg> <!-- Socket 配置，允许为 null -->
         <constructor-arg index="2" value="5000" /> <!-- RPC 调用超时时间，单位：毫秒，默认为 5 秒 -->
@@ -363,8 +374,9 @@ public class RpcClientDemo {
                 <constructor-arg index="0" value="rpc-server-name" /> <!-- RPC 服务名称 -->
             </bean>
         </constructor-arg>
-        <constructor-arg index="7" ref="noticeableRpcBroadcastClientListener" />
-        <constructor-arg index="8" value="500" />  <!-- 线程池大小，默认为 500 -->
+        <constructor-arg index="7" ref="rpcClientListListener" />
+        <constructor-arg index="8" ref="rpcBroadcastClientListener" />
+        <constructor-arg index="9" value="500" />  <!-- 线程池大小，默认为 500 -->
     </bean>
 ```
 
@@ -395,6 +407,23 @@ public class BroadcastRpcClientDemo {
     }
 }
 ```
+
+## 版本发布记录
+### V1.1.0-SNAPSHOT
+### 新增特性：
+ * RPC 集群客户端自动移除不可用 RPC 客户端，不再依赖下一次 RPC 调用进行触发。
+ * 提供 RPC 服务是否成功下线判断。
+ * 更加健壮的心跳检测机制。
+ * 增加 RPC 广播调用恢复通知。
+
+***
+
+### V1.0
+### 特性：
+ * 配置简单。
+ * 支持 RPC 广播调用。
+ * 通过 Falcon 可快速实现 RPC 数据监控。
+ * 通过钉钉实现 RPC 服务故障实时报警。
 
 ## 更多信息
 * [NaiveMonitor 项目主页](https://github.com/heimuheimu/naivemonitor)
