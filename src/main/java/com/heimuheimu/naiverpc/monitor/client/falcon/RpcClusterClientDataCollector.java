@@ -35,7 +35,7 @@ import java.util.List;
 /**
  * RPC 集群客户端信息 Falcon 监控数据采集器。该采集器采集周期为 30 秒，每次采集将会返回以下数据项：
  * <ul>
- *     <li>naiverpc_cluster_unavailable_client_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 集群客户端获取到不可用 RPC 客户端的次数</li>
+ *     <li>naiverpc_client_cluster_unavailable_client_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 集群客户端获取到不可用 RPC 客户端的次数</li>
  * </ul>
  */
 public class RpcClusterClientDataCollector extends AbstractFalconDataCollector {
@@ -55,6 +55,11 @@ public class RpcClusterClientDataCollector extends AbstractFalconDataCollector {
     @Override
     protected String getModuleName() {
         return FalconDataCollectorConstant.MODULE_NAME;
+    }
+
+    @Override
+    protected String getCollectorName() {
+        return "client";
     }
 
     @Override
