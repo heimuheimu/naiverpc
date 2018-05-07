@@ -13,7 +13,7 @@
     <dependency>
         <groupId>com.heimuheimu</groupId>
         <artifactId>naiverpc</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.1</version>
     </dependency>
 ```
 
@@ -74,7 +74,7 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 
 ### Spring 配置
 ```xml
-    <!-- RPC 服务配置，监听端口为 4182 -->
+    <!-- RPC 服务配置，监听端口为 4182，初始化方法由 AutoRpcServiceBeanRegister 进行调用 -->
     <bean id="rpcServer" class="com.heimuheimu.naiverpc.spring.server.RpcServerFactory" destroy-method="close">
         <constructor-arg index="0" value="4182" /> <!-- RPC 服务监听端口，默认为 4182 -->
         <constructor-arg index="1"> <!-- 监听器，允许为 null -->
@@ -409,7 +409,7 @@ public class BroadcastRpcClientDemo {
 ```
 
 ## 版本发布记录
-### V1.1.0-SNAPSHOT
+### V1.1
 ### 新增特性：
  * RPC 集群客户端自动移除不可用 RPC 客户端，不再依赖下一次 RPC 调用进行触发。
  * 提供 RPC 服务是否成功下线判断。
@@ -427,6 +427,6 @@ public class BroadcastRpcClientDemo {
 
 ## 更多信息
 * [NaiveMonitor 项目主页](https://github.com/heimuheimu/naivemonitor)
-* [NaiveRPC v1.0 API Doc](https://heimuheimu.github.io/naiverpc/api/v1.0/)
-* [NaiveRPC v1.0 源码下载](https://heimuheimu.github.io/naiverpc/download/naiverpc-1.0-sources.jar)
-* [NaiveRPC v1.0 Jar包下载](https://heimuheimu.github.io/naiverpc/download/naiverpc-1.0.jar)
+* [NaiveRPC v1.1 API Doc](https://heimuheimu.github.io/naiverpc/api/v1.1/)
+* [NaiveRPC v1.1 源码下载](https://heimuheimu.github.io/naiverpc/download/naiverpc-1.1-sources.jar)
+* [NaiveRPC v1.1 Jar包下载](https://heimuheimu.github.io/naiverpc/download/naiverpc-1.1.jar)
