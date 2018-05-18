@@ -66,7 +66,7 @@ public class NoticeableDirectRpcClientListListener implements DirectRpcClientLis
     private final NaiveServiceAlarm naiveServiceAlarm;
 
     /**
-     * 已发送下线操作请求的 RPC 服务提供方主机地址 Map，Key 为主机值，Value 固定为 1
+     * 已发送下线操作请求的 RPC 服务提供方主机地址 Map，Key 为主机名称和列表名称组合字符串，Value 固定为 1
      */
     private final ConcurrentHashMap<String, Integer> offlineHostMap = new ConcurrentHashMap<>();
 
@@ -112,7 +112,7 @@ public class NoticeableDirectRpcClientListListener implements DirectRpcClientLis
 
     @Override
     public void onRecovered(String listName, String host) {
-        if (offlineHostMap.remove(host) == null) {
+        if (offlineHostMap.remove(host + "_" + listName) == null) {
             naiveServiceAlarm.onRecovered(getServiceContext(listName, host));
         }
     }
@@ -120,7 +120,7 @@ public class NoticeableDirectRpcClientListListener implements DirectRpcClientLis
     @Override
     public void onClosed(String listName, String host, boolean isOffline) {
         if (isOffline) {
-            offlineHostMap.put(host, 1);
+            offlineHostMap.put(host + "_" + listName, 1);
         } else {
             naiveServiceAlarm.onCrashed(getServiceContext(listName, host));
         }
