@@ -218,8 +218,10 @@ public class DirectRpcClient implements RpcClient {
         this.slowExecutionThreshold = TimeUnit.NANOSECONDS.convert(slowExecutionThreshold, TimeUnit.MILLISECONDS);
         this.executionMonitor = RpcClientExecutionMonitorFactory.get(host);
         this.rpcChannel = new RpcChannel(host, configuration, heartbeatPeriod, unusableChannel -> {
-            for (CountDownLatch latch : latchMap.values()) {
-                latch.countDown();
+            if (unusableChannel.isClosed()) { // 释放所有等待 RPC 命令
+                for (CountDownLatch latch : latchMap.values()) {
+                    latch.countDown();
+                }
             }
             if (unusableServiceNotifier != null) {
                 unusableServiceNotifier.onClosed(this);

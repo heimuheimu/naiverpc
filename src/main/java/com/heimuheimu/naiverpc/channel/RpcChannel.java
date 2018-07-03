@@ -304,30 +304,6 @@ public class RpcChannel implements Closeable {
         return state == BeanStatusEnum.NORMAL && !isOffline;
     }
 
-
-    /**
-     * 发送一个 RPC 数据，数据发送前可通过 {@link #isActive()} 方法判断管道是否可用。
-     *
-     * @param rpcPacket RPC 数据
-     * @throws NullPointerException 如果发送的 RPC 数据为 {@code null}，将抛出此异常
-     * @throws IllegalStateException 如果当前管道不可用，将抛出此异常
-     * @see #isActive()
-     */
-    public void send(RpcPacket rpcPacket) throws NullPointerException, IllegalStateException {
-        if (rpcPacket == null) {
-            LOG.error("[" + mode + "] RpcChannel send RpcPacket failed: `RpcPacket could not be null`. Host: `" + host + "`. Socket: `" + socket + "`.");
-            throw new NullPointerException("[" + mode + "] RpcChannel send RpcPacket failed: `RpcPacket could not be null`. Host: `" + host + "`. Socket: `" + socket + "`.");
-        }
-        if (isActive()) {
-            rpcPacketQueue.add(rpcPacket);
-        } else {
-            LOG.error("[" + mode + "] RpcChannel send RpcPacket failed: `channel is inactive`. State: `" + state +
-                    "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
-            throw new IllegalStateException("[" + mode + "] RpcChannel send RpcPacket failed: `channel is inactive`. State: `" + state +
-                    "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
-        }
-    }
-
     /**
      * RPC 服务提供方给 RPC 服务调用方发送一个下线操作请求，调用方在收到该请求后将不再发送新的 RPC 数据，并在 1 分钟后关闭当前管道。
      *
@@ -355,6 +331,38 @@ public class RpcChannel implements Closeable {
             LOG.warn("[" + mode + "] RpcChannel offline failed: `client rpc channel should not invoke #offline() method`. State: `" + state +
                     "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
             return false;
+        }
+    }
+
+    /**
+     * 判断当前 RPC 数据通信管道是否已被关闭。
+     *
+     * @return 当前 RPC 数据通信管道是否已被关闭
+     */
+    public boolean isClosed() {
+        return state == BeanStatusEnum.CLOSED;
+    }
+
+    /**
+     * 发送一个 RPC 数据，数据发送前可通过 {@link #isActive()} 方法判断管道是否可用。
+     *
+     * @param rpcPacket RPC 数据
+     * @throws NullPointerException 如果发送的 RPC 数据为 {@code null}，将抛出此异常
+     * @throws IllegalStateException 如果当前管道不可用，将抛出此异常
+     * @see #isActive()
+     */
+    public void send(RpcPacket rpcPacket) throws NullPointerException, IllegalStateException {
+        if (rpcPacket == null) {
+            LOG.error("[" + mode + "] RpcChannel send RpcPacket failed: `RpcPacket could not be null`. Host: `" + host + "`. Socket: `" + socket + "`.");
+            throw new NullPointerException("[" + mode + "] RpcChannel send RpcPacket failed: `RpcPacket could not be null`. Host: `" + host + "`. Socket: `" + socket + "`.");
+        }
+        if (isActive()) {
+            rpcPacketQueue.add(rpcPacket);
+        } else {
+            LOG.error("[" + mode + "] RpcChannel send RpcPacket failed: `channel is inactive`. State: `" + state +
+                    "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
+            throw new IllegalStateException("[" + mode + "] RpcChannel send RpcPacket failed: `channel is inactive`. State: `" + state +
+                    "`. Offline: `" + isOffline + "`. Host: `" + host + "`. Socket: `" + socket + "`.");
         }
     }
 
