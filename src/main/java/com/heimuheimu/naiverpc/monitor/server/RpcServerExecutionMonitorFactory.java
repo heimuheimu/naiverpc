@@ -46,9 +46,14 @@ public class RpcServerExecutionMonitorFactory {
     private static final Object lock = new Object();
 
     /**
-     * RPC 服务端操作执行错误码：调用方法抛出异常。
+     * RPC 服务端操作执行错误码：调用方法抛出异常
      */
     public static final int ERROR_CODE_INVOCATION_ERROR = -3;
+
+    /**
+     * RPC 服务端操作执行错误码：慢执行
+     */
+    public static final int ERROR_CODE_SLOW_EXECUTION = -4;
 
     /**
      * 根据 RPC 服务端监听端口，获得对应的操作执行信息监控器，该方法不会返回 {@code null}。

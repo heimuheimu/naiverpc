@@ -295,6 +295,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
                     if (rpcExecutorListener != null) {
                         long executedNanoTime = System.nanoTime() - startTime;
                         if (executedNanoTime > slowExecutionThreshold) {
+                            executionMonitor.onError(RpcServerExecutionMonitorFactory.ERROR_CODE_SLOW_EXECUTION);
                             try {
                                 rpcExecutorListener.onSlowExecution(rpcRequestMessage, executedNanoTime);
                             } catch (Exception e) {

@@ -39,6 +39,7 @@ import java.util.Map;
  *
  * <ul>
  *     <li>naiverpc_server_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生异常的错误次数</li>
+ *     <li>naiverpc_server_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生的慢执行次数</li>
  *     <li>naiverpc_server_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数</li>
  *     <li>naiverpc_server_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数</li>
  *     <li>naiverpc_server_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行平均执行时间</li>
@@ -54,6 +55,7 @@ public class RpcServerExecutionDataCollector extends AbstractExecutionDataCollec
     static {
         ERROR_METRIC_SUFFIX_MAP = new HashMap<>();
         ERROR_METRIC_SUFFIX_MAP.put(RpcServerExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR, "_error");
+        ERROR_METRIC_SUFFIX_MAP.put(RpcServerExecutionMonitorFactory.ERROR_CODE_SLOW_EXECUTION, "_slow_execution");
     }
 
     private final String collectorName;

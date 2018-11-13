@@ -56,9 +56,14 @@ public class RpcClientExecutionMonitorFactory {
     public static final int ERROR_CODE_TOO_BUSY = -2;
 
     /**
-     * RPC  客户端操作执行错误码：调用方法抛出异常
+     * RPC 客户端操作执行错误码：调用方法抛出异常
      */
     public static final int ERROR_CODE_INVOCATION_ERROR = -3;
+
+    /**
+     * RPC  客户端操作执行错误码：慢执行
+     */
+    public static final int ERROR_CODE_SLOW_EXECUTION = -4;
 
     /**
      * 根据 Socket 连接目标地址获得对应的操作执行信息监控器，该方法不会返回 {@code null}。

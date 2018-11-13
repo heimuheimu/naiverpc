@@ -41,6 +41,7 @@ import java.util.Map;
  *     <li>naiverpc_client_{groupName}_too_busy/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 服务繁忙的错误次数</li>
  *     <li>naiverpc_client_{groupName}_timeout/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生超时的错误次数</li>
  *     <li>naiverpc_client_{groupName}_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生异常的错误次数</li>
+ *     <li>naiverpc_client_{groupName}_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生的慢执行次数</li>
  *     <li>naiverpc_client_{groupName}_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数</li>
  *     <li>naiverpc_client_{groupName}_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数</li>
  *     <li>naiverpc_client_{groupName}_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 调用平均执行时间</li>
@@ -58,6 +59,7 @@ public class RpcClientExecutionDataCollector extends AbstractExecutionDataCollec
         ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY, "_too_busy");
         ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT, "_timeout");
         ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR, "_error");
+        ERROR_METRIC_SUFFIX_MAP.put(RpcClientExecutionMonitorFactory.ERROR_CODE_SLOW_EXECUTION, "_slow_execution");
     }
 
     private final String collectorName;

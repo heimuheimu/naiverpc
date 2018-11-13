@@ -388,6 +388,7 @@ public class DirectRpcClient implements RpcClient {
         } finally {
             long executedNanoTime = System.nanoTime() - startTime;
             if (executedNanoTime > slowExecutionThreshold) {
+                executionMonitor.onError(RpcClientExecutionMonitorFactory.ERROR_CODE_SLOW_EXECUTION);
                 rpcClientListenerWrapper.onSlowExecution(host, method, args, executedNanoTime);
             }
             executionMonitor.onExecuted(startTime);
