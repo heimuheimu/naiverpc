@@ -110,6 +110,7 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 
 ### Falcon 上报数据项说明（上报周期：30秒）
  * naiverpc_server_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生异常的错误次数
+ * naiverpc_server_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生的慢执行次数
  * naiverpc_server_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数
  * naiverpc_server_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数
  * naiverpc_server_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行平均执行时间
@@ -309,6 +310,7 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
  * naiverpc_client_{groupName}_too_busy/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 服务繁忙的错误次数
  * naiverpc_client_{groupName}_timeout/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生超时的错误次数
  * naiverpc_client_{groupName}_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生异常的错误次数
+ * naiverpc_client_{groupName}_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生的慢执行次数
  * naiverpc_client_{groupName}_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数
  * naiverpc_client_{groupName}_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数
  * naiverpc_client_{groupName}_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 调用平均执行时间
