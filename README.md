@@ -109,22 +109,31 @@ log4j.appender.NAIVERPC_SERVER_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 ```
 
 ### Falcon 上报数据项说明（上报周期：30秒）
+#### RPC 服务端方法执行错误数据项：
  * naiverpc_server_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生异常的错误次数
  * naiverpc_server_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 方法执行发生的慢执行次数
+ 
+#### RPC 服务端方法执行数据项： 
  * naiverpc_server_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数
  * naiverpc_server_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数
  * naiverpc_server_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行平均执行时间
  * naiverpc_server_max_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 方法执行最大执行时间
+ 
+#### RPC 服务端 Socket 数据项：
  * naiverpc_server_socket_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 读取的总字节数
  * naiverpc_server_socket_avg_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次读取的平均字节数
  * naiverpc_server_socket_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 写入的总字节数
  * naiverpc_server_socket_avg_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次写入的平均字节数
+ 
+#### RPC 服务端线程池数据项：
  * naiverpc_server_threadPool_rejected_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内所有线程池拒绝执行的任务总数
  * naiverpc_server_threadPool_active_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池活跃线程数近似值总和
  * naiverpc_server_threadPool_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池线程数总和
  * naiverpc_server_threadPool_peak_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池出现过的最大线程数总和
  * naiverpc_server_threadPool_core_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的核心线程数总和
  * naiverpc_server_threadPool_maximum_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的最大线程数总和
+ 
+#### RPC 服务端压缩数据项： 
  * naiverpc_server_compression_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内压缩操作已节省的字节数
  * naiverpc_server_compression_avg_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内平均每次压缩操作节省的字节数
  
@@ -307,24 +316,33 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 ```
 
 ### Falcon 上报数据项说明（上报周期：30秒）
+#### RPC 客户端方法调用错误数据项：
  * naiverpc_client_{groupName}_too_busy/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 服务繁忙的错误次数
  * naiverpc_client_{groupName}_timeout/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生超时的错误次数
  * naiverpc_client_{groupName}_error/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生异常的错误次数
  * naiverpc_client_{groupName}_slow_execution/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 调用发生的慢执行次数
+ 
+#### RPC 客户端方法调用数据项： 
  * naiverpc_client_{groupName}_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒平均执行次数
  * naiverpc_client_{groupName}_peak_tps/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内每秒最大执行次数
  * naiverpc_client_{groupName}_avg_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 调用平均执行时间
  * naiverpc_client_{groupName}_max_exec_time/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内单次 RPC 调用最大执行时间
+
+#### RPC 客户端 Scoket 数据项： 
  * naiverpc_client_{groupName}_socket_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 读取的总字节数
  * naiverpc_client_{groupName}_socket_avg_read_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次读取的平均字节数
  * naiverpc_client_{groupName}_socket_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 写入的总字节数
  * naiverpc_client_{groupName}_socket_avg_written_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 Socket 每次写入的平均字节数
+ 
+#### RPC 客户端线程池数据项： 
  * naiverpc_client_threadPool_rejected_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内所有线程池拒绝执行的任务总数
  * naiverpc_client_threadPool_active_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池活跃线程数近似值总和
  * naiverpc_client_threadPool_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 采集时刻所有线程池线程数总和
  * naiverpc_client_threadPool_peak_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池出现过的最大线程数总和
  * naiverpc_client_threadPool_core_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的核心线程数总和
  * naiverpc_client_threadPool_maximum_pool_size/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 所有线程池配置的最大线程数总和
+ 
+#### RPC 客户端压缩数据项： 
  * naiverpc_client_compression_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内压缩操作已节省的字节数
  * naiverpc_client_compression_avg_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内平均每次压缩操作节省的字节数
  * naiverpc_client_cluster_unavailable_client_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 集群客户端获取到不可用 RPC 客户端的次数
