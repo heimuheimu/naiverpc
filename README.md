@@ -345,6 +345,8 @@ log4j.appender.NAIVERPC_CLIENT_SLOW_EXECUTION_LOG.layout.ConversionPattern=%d{IS
 #### RPC 客户端压缩数据项： 
  * naiverpc_client_compression_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内压缩操作已节省的字节数
  * naiverpc_client_compression_avg_reduce_bytes/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内平均每次压缩操作节省的字节数
+ 
+#### RPC 集群客户端数据项： 
  * naiverpc_client_cluster_unavailable_client_count/module=naiverpc &nbsp;&nbsp;&nbsp;&nbsp; 30 秒内 RPC 集群客户端获取到不可用 RPC 客户端的次数
  
 ### 示例代码
