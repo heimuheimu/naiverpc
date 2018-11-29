@@ -402,7 +402,7 @@ public class DirectRpcClientList implements Closeable {
                 LOG.debug("Remove `DirectRpcClient` from client list success." + LogBuildUtil.build(getParameterMap(clientIndex, unavailableClient.getHost())));
             }
         }
-        if (isRemoveSuccess) {
+        if (isRemoveSuccess && (state != BeanStatusEnum.CLOSED)) {
             startRescueTask();
             Methods.invokeIfNotNull("DirectRpcClientListListener#onClosed(String host)", getParameterMap(clientIndex, unavailableClient.getHost()),
                     listener, () -> listener.onClosed(name, unavailableClient.getHost(), unavailableClient.isOffline()));
