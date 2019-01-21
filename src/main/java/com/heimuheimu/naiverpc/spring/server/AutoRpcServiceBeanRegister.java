@@ -24,8 +24,10 @@
 
 package com.heimuheimu.naiverpc.spring.server;
 
+import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.server.RpcServer;
 import com.heimuheimu.naiverpc.spring.InterfaceFinder;
+import com.heimuheimu.naiverpc.util.LogBuildUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -34,6 +36,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -111,6 +114,7 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
             candidates.addAll(interfaceFinder.find(basePackage, classNameRegex));
         }
         LOG.info("Base package: `{}`. Class name regex: `{}`. Candidates: `{}`.", basePackages, classNameRegex, candidates);
+        int registeredServiceCount = 0;
         if (!candidates.isEmpty()) {
             for (Class<?> clz : candidates) {
                 try {
@@ -118,12 +122,21 @@ public class AutoRpcServiceBeanRegister implements ApplicationContextAware, Init
                     rpcServer.register(rpcServiceBean);
                     LOG.info("`{}` has been registered. Interface: `{}`", rpcServiceBean.getClass().getName(),
                             clz.getName());
+                    registeredServiceCount ++;
                 } catch(Exception e) {
                     LOG.error("`" + clz + "` register failed.", e);
                 }
             }
-        } else {
-            LOG.error("There is no rpc service has been registered.");
+        }
+
+        if (registeredServiceCount == 0) {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+            params.put("basePackages", basePackages);
+            params.put("classNameRegex", classNameRegex);
+            params.put("initRpcServer", initRpcServer);
+            String errorMessage = "There is no rpc service has been registered." + LogBuildUtil.build(params);
+            LOG.error(errorMessage);
+            throw new RpcException(errorMessage);
         }
         if (initRpcServer) {
             rpcServer.init();

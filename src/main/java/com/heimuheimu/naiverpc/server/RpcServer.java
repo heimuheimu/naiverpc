@@ -27,6 +27,7 @@ package com.heimuheimu.naiverpc.server;
 import com.heimuheimu.naiverpc.channel.RpcChannel;
 import com.heimuheimu.naiverpc.constant.BeanStatusEnum;
 import com.heimuheimu.naiverpc.constant.OperationCode;
+import com.heimuheimu.naiverpc.exception.RpcException;
 import com.heimuheimu.naiverpc.net.SocketBuilder;
 import com.heimuheimu.naiverpc.net.SocketConfiguration;
 import com.heimuheimu.naiverpc.packet.RpcPacket;
@@ -212,8 +213,10 @@ public class RpcServer implements Closeable {
 
     /**
      * 执行 {@code RpcServer} 初始化操作，在初始化完成后，重复执行该方法不会产生任何效果。
+     *
+     * @throws RpcException 如果 RpcServer 初始化失败，将会抛出异常
      */
-    public synchronized void init() {
+    public synchronized void init() throws RpcException {
         if (state == BeanStatusEnum.UNINITIALIZED) {
             long startTime = System.currentTimeMillis();
             state = BeanStatusEnum.NORMAL;
@@ -224,8 +227,10 @@ public class RpcServer implements Closeable {
                 RPC_CONNECTION_LOG.info("RpcServer has been initialized. Cost: `{}ms`. Port: `{}`. SocketConfiguration: `{}`.",
                         (System.currentTimeMillis() - startTime), port, socketConfiguration);
             } catch (Exception e) {
-                LOG.error("Initialize RpcServer failed: `unexpected error`. Port: `" + port + "`.", e);
+                String errorMessage = "Initialize RpcServer failed: `unexpected error`. Port: `" + port + "`.";
+                LOG.error(errorMessage, e);
                 close();
+                throw new RpcException(errorMessage, e);
             }
         }
     }
