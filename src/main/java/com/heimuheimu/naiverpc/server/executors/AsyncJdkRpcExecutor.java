@@ -112,7 +112,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
      *
      * @param listenPort 通过该执行器提供 RPC 服务的 {@code RpcServer} 监听端口
      * @param compressionThreshold 最小压缩字节数，当数据 body 字节数小于或等于该值，不进行压缩，不能小于等于 0
-     * @param slowExecutionThreshold RPC 执行过慢最小时间，单位：纳秒，不能小于等于 0，RPC 调用时间大于该值时，将会触发 {@link RpcExecutorListener#onSlowExecution(RpcRequestMessage, long)} 事件
+     * @param slowExecutionThreshold RPC 执行过慢最小时间，单位：毫秒，不能小于等于 0，RPC 调用时间大于该值时，将会触发 {@link RpcExecutorListener#onSlowExecution(RpcRequestMessage, long)} 事件
      * @param rpcExecutorListener {@code RpcExecutor} 事件监听器，允许为 {@code null}
      * @param maximumPoolSize RPC 执行线程池最大数量，不能小于等于 0
      * @throws IllegalArgumentException 如果创建 {@code AsyncJdkRpcExecutor} 使用的最小压缩字节数小于等于 0，将会抛出此异常
