@@ -1,5 +1,7 @@
 # NaiveRPC: 简单易用的 Java RPC 框架。
 
+<a href="https://lgtm.com/projects/g/heimuheimu/naiverpc/context:java"><img alt="Language grade: Java" src="https://img.shields.io/lgtm/grade/java/g/heimuheimu/naiverpc.svg?logo=lgtm&logoWidth=18"/></a>
+
 ## 使用要求
 * JDK 版本：1.8+ 
 * 依赖类库：
