@@ -460,7 +460,7 @@ public class RpcChannel implements Closeable {
                                 }
                             }
 
-                        }.start();;
+                        }.start();
                     }
                 }
             } catch (InterruptedException e) {
