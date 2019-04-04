@@ -172,11 +172,11 @@ public class RpcClusterClient implements RpcClient {
             if (tooBusyRetryTimes > 0) {
                 --tooBusyRetryTimes;
                 LOG.error("RPC execute failed: `too busy, left retry times: {}`. Host: `{}`. Method: `{}`. Arguments: `{}`. Hosts: `{}`.",
-                        tooBusyRetryTimes, client.getHost(), method, args, hosts);
+                        tooBusyRetryTimes, client.getHost(), method, args, hosts); // lgtm [java/print-array]
                 return execute(method, args, timeout, tooBusyRetryTimes);
             } else {
                 LOG.error("RPC execute failed: `too busy, no more retry`. Host: `{}`. Method: `{}`. Arguments: `{}`. Hosts: `{}`.",
-                        client.getHost(), method, args, hosts);
+                        client.getHost(), method, args, hosts); // lgtm [java/print-array]
                 throw ex;
             }
         }

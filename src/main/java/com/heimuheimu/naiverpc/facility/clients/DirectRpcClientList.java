@@ -178,12 +178,12 @@ public class DirectRpcClientList implements Closeable {
             boolean isSuccess = createClient(-1, host);
             if (isSuccess) {
                 hasAvailableClient = true;
-                RPC_CONNECTION_LOG.info("Add `{}` to `{}` is success. Hosts: `{}`.", host, name, hosts);
+                RPC_CONNECTION_LOG.info("Add `{}` to `{}` is success. Hosts: `{}`.", host, name, hosts); // lgtm [java/print-array]
                 Methods.invokeIfNotNull("DirectRpcClientListListener#onCreated(String host)", getParameterMap(-1, host),
                         listener, () -> listener.onCreated(name, host));
             } else {
                 isNeedStartRescueTask = true;
-                RPC_CONNECTION_LOG.error("Add `{}` to `{}` failed. Hosts: `{}`.", host, name, hosts);
+                RPC_CONNECTION_LOG.error("Add `{}` to `{}` failed. Hosts: `{}`.", host, name, hosts); // lgtm [java/print-array]
                 Methods.invokeIfNotNull("DirectRpcClientListListener#onClosed(String host)", getParameterMap(-1, host),
                         listener, () -> listener.onClosed(name, host, false));
             }
@@ -326,7 +326,7 @@ public class DirectRpcClientList implements Closeable {
                     client.close();
                 }
             }
-            RPC_CONNECTION_LOG.info("DirectRpcClientList has been closed. `name`:`{}`. `hosts`:`{}`.", name, hosts);
+            RPC_CONNECTION_LOG.info("DirectRpcClientList has been closed. `name`:`{}`. `hosts`:`{}`.", name, hosts); // lgtm [java/print-array]
         }
     }
 
@@ -467,10 +467,10 @@ public class DirectRpcClientList implements Closeable {
                                     }
                                 }
                                 RPC_CONNECTION_LOG.info("DirectRpcClient rescue task has been finished. Cost: {}ms. `name`:`{}`. `hosts`:`{}`.",
-                                        System.currentTimeMillis() - startTime, name, hosts);
+                                        System.currentTimeMillis() - startTime, name, hosts); // lgtm [java/print-array]
                             } catch (Exception e) { //should not happen, just for bug detection
                                 RPC_CONNECTION_LOG.info("DirectRpcClient rescue task execute failed: `{}`. Cost: {}ms. `name`:`{}`. `hosts`:`{}`.",
-                                        e.getMessage(), System.currentTimeMillis() - startTime, name, hosts);
+                                        e.getMessage(), System.currentTimeMillis() - startTime, name, hosts); // lgtm [java/print-array]
                                 LOG.error("DirectRpcClient rescue task executed failed. `name`:`" + name + "`. `hosts`:`"
                                         + Arrays.toString(hosts) + "`.", e);
                             } finally {

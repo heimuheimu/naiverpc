@@ -90,56 +90,56 @@ public class SimpleDirectRpcClientListener extends DirectRpcClientListenerSkelet
     @Override
     public void onClassNotFound(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Class not found`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onNoSuchMethod(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`No such method`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onIllegalArgument(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Illegal argument`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onInvocationTargetError(String host, Method method, Object[] args, String errorMessage) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`[Invocation target error] {}`",
-                serviceName, host, method, args, errorMessage);
+                serviceName, host, method, args, errorMessage); // lgtm [java/print-array]
     }
 
     @Override
     public void onTimeout(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Timeout`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onError(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Unexpected error`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onTooBusy(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Too busy`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onClosed(String host, Method method, Object[] args) {
         RPC_CLIENT_ERROR_EXECUTION_LOG.error("`Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`, `Error`:`Closed client`",
-                serviceName, host, method, args);
+                serviceName, host, method, args); // lgtm [java/print-array]
     }
 
     @Override
     public void onSlowExecution(String host, Method method, Object[] args, long executedNanoTime) {
         RPC_CLIENT_SLOW_EXECUTION_LOG.error("`Cost`:`{}ns ({}ms)`, `Service`:`{}`, `Host`:`{}`, `Method`:`{}`, `Arguments`:`{}`",
                 executedNanoTime, TimeUnit.MILLISECONDS.convert(executedNanoTime, TimeUnit.NANOSECONDS), serviceName,
-                host, method, args);
+                host, method, args); // lgtm [java/print-array]
     }
 
     @Override
