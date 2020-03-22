@@ -145,7 +145,7 @@ public class AsyncJdkRpcExecutor implements RpcExecutor {
                     + "`. CompressionThreshold: `" + compressionThreshold + "`. SlowExecutionThreshold: `" + slowExecutionThreshold + "`. RpcExecutorListener: `"
                     + rpcExecutorListener + "`. MaximumPoolSize: `" + maximumPoolSize + "`.");
         }
-        this.transcoder = new SimpleTranscoder(compressionThreshold, RpcServerCompressionMonitorFactory.get());
+        this.transcoder = new SimpleTranscoder(compressionThreshold, RpcServerCompressionMonitorFactory.get(listenPort));
         //将毫秒转换为纳秒
         this.slowExecutionThreshold = TimeUnit.NANOSECONDS.convert(slowExecutionThreshold, TimeUnit.MILLISECONDS);
         this.rpcExecutorListener = rpcExecutorListener;

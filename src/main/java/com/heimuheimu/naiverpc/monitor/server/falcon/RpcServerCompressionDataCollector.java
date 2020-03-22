@@ -52,8 +52,7 @@ public class RpcServerCompressionDataCollector extends AbstractCompressionDataCo
      */
     public RpcServerCompressionDataCollector() {
         this.collectorName = "server";
-        this.compressionMonitorList = new ArrayList<>();
-        this.compressionMonitorList.add(RpcServerCompressionMonitorFactory.get());
+        this.compressionMonitorList = new ArrayList<>(RpcServerCompressionMonitorFactory.getAll());
     }
 
     @Override

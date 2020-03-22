@@ -25,6 +25,9 @@
 package com.heimuheimu.naiverpc.monitor.server;
 
 import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
+import com.heimuheimu.naivemonitor.monitor.factory.NaiveCompressionMonitorFactory;
+
+import java.util.List;
 
 /**
  * RPC 服务端使用的压缩信息监控器工厂类。
@@ -33,19 +36,29 @@ import com.heimuheimu.naivemonitor.monitor.CompressionMonitor;
  */
 public class RpcServerCompressionMonitorFactory {
 
+    private static final String NAME_PREFIX = "NaiveRpcServer_";
+
     private RpcServerCompressionMonitorFactory() {
         //private constructor
     }
 
-    private static final CompressionMonitor SERVER_COMPRESSION_MONITOR = new CompressionMonitor();
-
     /**
-     * 获得 RPC 客户端使用的压缩信息监控器。
+     * 根据 RPC 服务端监听端口，获得对应的压缩信息监控器，该方法不会返回 {@code null}。
      *
-     * @return 压缩信息监控器
+     * @param listenPort RPC 服务端监听端口
+     * @return RPC 服务端监听端口对应的压缩信息监控器，该方法不会返回 {@code null}
+     * @since 1.2
      */
-    public static CompressionMonitor get() {
-        return SERVER_COMPRESSION_MONITOR;
+    public static CompressionMonitor get(int listenPort) {
+        return NaiveCompressionMonitorFactory.get(NAME_PREFIX + listenPort);
     }
 
+    /**
+     * 获得 RPC 服务端使用的压缩信息监控器列表，该方法不会返回 {@code null}。
+     *
+     * @return RPC 服务端使用的压缩信息监控器列表，不会为 {@code null}
+     */
+    public static List<CompressionMonitor> getAll() {
+        return NaiveCompressionMonitorFactory.getListByPrefix(NAME_PREFIX);
+    }
 }
