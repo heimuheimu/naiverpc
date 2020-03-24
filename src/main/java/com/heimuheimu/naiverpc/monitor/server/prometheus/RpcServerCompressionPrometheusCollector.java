@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RPC 压缩操作信息采集器，采集时会返回以下数据：
+ * RPC 服务端压缩操作信息采集器，采集时会返回以下数据：
  * <ul>
  *     <li>naiverpc_server_compression_count{name="$serverName",port="$listenPort"} 相邻两次采集周期内已执行的压缩次数</li>
  *     <li>naiverpc_server_compression_reduce_bytes{name="$serverName",port="$listenPort"} 相邻两次采集周期内通过压缩节省的字节总数</li>
