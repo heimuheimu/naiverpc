@@ -40,9 +40,12 @@ import java.util.Map;
  * <ul>
  *     <li>naiverpc_client_exec_count{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内 RPC 方法调用次数</li>
  *     <li>naiverpc_client_exec_peak_tps_count{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内每秒最大 RPC 方法调用次数</li>
- *     <li>naiverpc_client_avg_exec_time_millisecond{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内单次 RPC 方法平均执行时间，单位：毫秒</li>
- *     <li>naiverpc_client_max_exec_time_millisecond{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内单次 RPC 方法最大执行时间，单位：毫秒</li>
- *     <li>naiverpc_client_exec_error_count{errorCode="$errorCode",errorType="$errorType",name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内特定类型 RPC 方法调用失败次数</li>
+ *     <li>naiverpc_client_avg_exec_time_millisecond{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内单次 RPC 方法调用平均执行时间，单位：毫秒</li>
+ *     <li>naiverpc_client_max_exec_time_millisecond{name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内单次 RPC 方法调用最大执行时间，单位：毫秒</li>
+ *     <li>naiverpc_client_exec_error_count{errorCode="-1",errorType="Timeout",name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内 RPC 方法调用出现执行超时的错误次数</li>
+ *     <li>naiverpc_client_exec_error_count{errorCode="-2",errorType="TooBusy",name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内 RPC 方法调用出现 RPC 服务端繁忙的错误次数</li>
+ *     <li>naiverpc_client_exec_error_count{errorCode="-3",errorType="InvocationError",name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内 RPC 方法调用出现异常的错误次数</li>
+ *     <li>naiverpc_client_exec_error_count{errorCode="-4",errorType="SlowExecution",name="$serverName",remoteAddress="$remoteAddress"} 相邻两次采集周期内 RPC 方法调用出现执行过慢的错误次数</li>
  * </ul>
  *
  * @author heimuheimu
@@ -95,8 +98,8 @@ public class RpcClientExecutionPrometheusCollector extends AbstractExecutionProm
     @Override
     protected Map<Integer, String> getErrorTypeMap() {
         Map<Integer, String> errorTypeMap = new HashMap<>();
-        errorTypeMap.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY, "TooBusy");
         errorTypeMap.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TIMEOUT, "Timeout");
+        errorTypeMap.put(RpcClientExecutionMonitorFactory.ERROR_CODE_TOO_BUSY, "TooBusy");
         errorTypeMap.put(RpcClientExecutionMonitorFactory.ERROR_CODE_INVOCATION_ERROR, "InvocationError");
         errorTypeMap.put(RpcClientExecutionMonitorFactory.ERROR_CODE_SLOW_EXECUTION, "SlowExecution");
         return errorTypeMap;

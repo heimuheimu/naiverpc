@@ -42,7 +42,8 @@ import java.util.Map;
  *     <li>naiverpc_server_exec_peak_tps_count{name="$serverName",port="$listenPort"} 相邻两次采集周期内每秒最大 RPC 方法执行次数</li>
  *     <li>naiverpc_server_avg_exec_time_millisecond{name="$serverName",port="$listenPort"} 相邻两次采集周期内单次 RPC 方法平均执行时间，单位：毫秒</li>
  *     <li>naiverpc_server_max_exec_time_millisecond{name="$serverName",port="$listenPort"} 相邻两次采集周期内单次 RPC 方法最大执行时间，单位：毫秒</li>
- *     <li>naiverpc_server_exec_error_count{errorCode="$errorCode",errorType="$errorType",name="$serverName",port="$listenPort"} 相邻两次采集周期内特定类型 RPC 方法执行失败次数</li>
+ *     <li>naiverpc_server_exec_error_count{errorCode="-3",errorType="InvocationError",name="$serverName",port="$listenPort"} 相邻两次采集周期内 RPC 方法执行出现异常的错误次数</li>
+ *     <li>naiverpc_server_exec_error_count{errorCode="-4",errorType="SlowExecution",name="$serverName",port="$listenPort"} 相邻两次采集周期内 RPC 方法执行出现执行过慢的错误次数</li>
  * </ul>
  *
  * @author heimuheimu
